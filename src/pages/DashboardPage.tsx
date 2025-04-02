@@ -1,6 +1,4 @@
-import React from 'react';
 import { BarChart3, Package, DollarSign, Star, Users, TrendingUp, Zap, ShoppingBag } from 'lucide-react';
-import { QuantumBackground } from '../components/QuantumBackground';
 import type { Product, User } from '../types';
 
 interface DashboardPageProps {
@@ -15,10 +13,7 @@ export function DashboardPage({ user, products }: DashboardPageProps) {
   // If user has no approved products, show buyer dashboard
   if (!hasApprovedProducts) {
     return (
-      <div className="min-h-screen pt-20 bg-surface-50">
-        <div className="relative">
-          <QuantumBackground intensity="low" className="absolute inset-0 pointer-events-none" overlay={true} />
-          
+      <div className="min-h-screen pt-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
             <div className="text-center mb-12">
               <ShoppingBag className="h-16 w-16 text-surface-400 mx-auto mb-4" />
@@ -63,7 +58,6 @@ export function DashboardPage({ user, products }: DashboardPageProps) {
             </div>
           </div>
         </div>
-      </div>
     );
   }
 
@@ -81,10 +75,8 @@ export function DashboardPage({ user, products }: DashboardPageProps) {
   ];
 
   return (
-    <div className="min-h-screen pt-20 bg-surface-50">
+    <div className="min-h-screen pt-20 bg-white">
       <div className="relative">
-        <QuantumBackground intensity="low" className="absolute inset-0 pointer-events-none" overlay={true} />
-        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="flex items-center justify-between mb-8">
             <div>

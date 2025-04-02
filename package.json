@@ -12,6 +12,7 @@
   "dependencies": {
     "@netlify/functions": "^2.6.0",
     "@stripe/stripe-js": "^2.4.0",
+    "@supabase/supabase-js": "^2.49.4",
     "helmet": "^7.1.0",
     "hpp": "^0.2.3",
     "lucide-react": "^0.344.0",
@@ -23,6 +24,8 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@types/react": "^19.0.12",
+    "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.18",
     "postcss": "^8.4.35",

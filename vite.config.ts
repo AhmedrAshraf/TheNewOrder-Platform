@@ -24,7 +24,6 @@ export default defineConfig({
     include: ['react', 'react-dom', 'react-router-dom', '@stripe/stripe-js', 'lucide-react']
   },
   esbuild: {
-    drop: ['console', 'debugger'],
     minifyIdentifiers: true,
     minifySyntax: true,
     minifyWhitespace: true,
@@ -37,7 +36,7 @@ export default defineConfig({
       'X-XSS-Protection': '1; mode=block',
       'Referrer-Policy': 'strict-origin-when-cross-origin',
       'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-      'Content-Security-Policy': "default-src 'self'; img-src 'self' https://images.unsplash.com data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com; connect-src 'self' https://api.stripe.com https://js.stripe.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com;"
+      'Content-Security-Policy': "default-src 'self'; img-src 'self' https://images.unsplash.com data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com; connect-src 'self' https://api.stripe.com https://js.stripe.com https://graoadnysazrvqggmhfe.supabase.co; frame-src 'self' https://js.stripe.com https://hooks.stripe.com;"
     }
   }
 });

@@ -24,6 +24,7 @@ import { MessagesPage } from './pages/MessagesPage';
 import { EnvCheck } from './pages/EnvCheck';
 import { QuantumBackground } from './components/QuantumBackground';
 import type { Product, AuthState } from './types';
+import { supabase } from './lib/supabase';
 
 const MARKETPLACE_PRODUCTS: Product[] = [
   {
@@ -81,13 +82,19 @@ function AppContent() {
   const [products, setProducts] = useState<Product[]>(MARKETPLACE_PRODUCTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOption, setFilterOption] = useState<'latest' | 'popular' | 'trending'>('popular');
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null);
+  
   const [auth, setAuth] = useState<AuthState>({
     isAuthenticated: false,
     user: null
   });
+  
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("auth", auth);
+    
     const savedAuth = localStorage.getItem('authState');
     if (savedAuth) {
       try {
@@ -108,24 +115,108 @@ function AppContent() {
     }
   }, [auth]);
 
-  const handleAuth = (email: string, password: string, isSignUp: boolean) => {
-    const isAdmin = email.includes('admin');
+  const handleAuth = async (name:string, email: string, password: string, isSignUp: boolean) => {
+    console.log("name", name);
     
-    setAuth({
-      isAuthenticated: true,
-      user: {
-        id: '1',
-        name: email.split('@')[0],
-        email,
-        products: [],
-        role: isAdmin ? 'admin' : 'user'
+    try{
+      setLoading(true)
+    const isAdmin = email.includes('admin');
+    console.log("isSignUp", isSignUp);
+    const trimmedEmail = email.trim();
+    if(isSignUp){
+      const { data, error } = await supabase.auth.signUp({
+        email: trimmedEmail,
+        password: password,
+      })
+      
+      if(error){
+        console.error("error", error);
+        setError(error.message);
       }
-    });
+      if (data.user === null) {
+        setError("User already exists");
+        return;
+      }
+      if(data){
+        console.log("data.user?.id", data.user?.id);
+        // ✅ Insert user row
+        const { error: insertError } = await supabase
+        .from('users')
+        .insert([{
+          id: data.user.id,
+          name,
+          email: trimmedEmail,
+          role: isAdmin ? "admin" : "user"
+        }]);
+
+        if (insertError) {
+        console.log("insertError", insertError);  
+        setError(insertError.message || "Error while inserting user.");
+        return;
+        }
+
+        // ✅ Fetch the full user row from your table
+        const { data: userRecord, error: fetchError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", data.user.id)
+        .single();
+        console.log("🚀 ~ handleAuth ~ userRecord:", userRecord)
+
+        if (fetchError || !userRecord) {
+        setError(fetchError?.message || "Unable to fetch user after signup");
+        return;
+        }
+
+        setAuth({isAuthenticated: true,user: userRecord,});
+
+      }
+    }else{
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
+      });
+      if (error) {
+        setError(error.message || "Login failed");
+        return;
+      }
+      
+      // ✅ Fetch from your users table
+      const { data: userRecord, error: fetchError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      
+      if (fetchError || !userRecord) {
+        setError(fetchError || "Could not find user data.");
+        return;
+      }
+      
+      setAuth({
+        isAuthenticated: true,
+        user: userRecord,
+      });
+      
+    }
+    console.log("authentication works");
+    
     setShowAuthModal(false);
     navigate('/dashboard');
+  }catch(error){
+    console.error("Error", error?.message);
+    setError(error?.message)
+  }finally{
+    setLoading(false)
+  }
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut()
+    if(error){
+      alert("Error" + error);
+    }
+    
     setAuth({
       isAuthenticated: false,
       user: null
@@ -171,7 +262,8 @@ function AppContent() {
     setProducts([...products, newProduct]);
     navigate('/marketplace');
   };
-
+  console.log("showAuthModal", showAuthModal);
+  
   return (
     <div className="min-h-screen bg-white flex flex-col relative">
       <ScrollToTop />
@@ -216,13 +308,15 @@ function AppContent() {
       </div>
 
       <Footer />
-
+      
       {showAuthModal && (
         <AuthModal
           isOpen={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
+          onClose={() => {setShowAuthModal(false); setError(null);}}
           onAuth={handleAuth}
-        />
+          loading={loading}
+          error={error}
+          />
       )}
 
       {import.meta.env.PROD && <CookieBanner />}
