@@ -8,10 +8,7 @@ import { useNotifications } from '../context/NotificationContext';
 import { QuantumBackground } from '../components/QuantumBackground';
 import { AdminNav } from '../components/AdminNav';
 import type { Workflow, AuthState } from '../types';
-
-interface AdminCurationPageProps {
-  auth: AuthState;
-}
+import { useAuth } from "../context/AuthContext";
 
 // Sample workflows for demonstration
 const SAMPLE_WORKFLOWS: Workflow[] = [
@@ -58,7 +55,8 @@ const SAMPLE_WORKFLOWS: Workflow[] = [
   }
 ];
 
-export function AdminCurationPage({ auth }: AdminCurationPageProps) {
+export function AdminCurationPage() {
+    const { user } = useAuth();
   const [workflows, setWorkflows] = useState<Workflow[]>(SAMPLE_WORKFLOWS);
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('pending');
@@ -71,7 +69,7 @@ export function AdminCurationPage({ auth }: AdminCurationPageProps) {
   const { addNotification } = useNotifications();
 
   // Redirect if not admin
-  if (!auth.user || auth.user.role !== 'admin') {
+  if (!user || user.role !== 'admin') {
     return (
       <div className="min-h-screen pt-20 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
         <div className="bg-white p-8 rounded-xl border border-surface-200 shadow-card max-w-md text-center">
@@ -109,7 +107,7 @@ export function AdminCurationPage({ auth }: AdminCurationPageProps) {
               ...workflow, 
               status: 'approved', 
               reviewedAt: new Date().toISOString(),
-              reviewedBy: auth.user?.name || 'admin',
+              reviewedBy: user?.name || 'admin',
               curatorNotes: curatorNotes || undefined
             } 
           : workflow
@@ -138,7 +136,7 @@ export function AdminCurationPage({ auth }: AdminCurationPageProps) {
               ...workflow, 
               status: 'rejected', 
               reviewedAt: new Date().toISOString(),
-              reviewedBy: auth.user?.name || 'admin',
+              reviewedBy: user?.name || 'admin',
               rejectionReason,
               curatorNotes: curatorNotes || undefined
             } 

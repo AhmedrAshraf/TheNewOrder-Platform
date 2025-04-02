@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Settings, LogOut, LogIn, UserPlus, Shield, HelpCircle } from 'lucide-react';
 import type { AuthState } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 interface UserDropdownProps {
   auth: AuthState;
@@ -9,10 +10,11 @@ interface UserDropdownProps {
   onAuthClick: () => void;
 }
 
-export function UserDropdown({ auth, onSignOut, onAuthClick }: UserDropdownProps) {
+export function UserDropdown({onSignOut, onAuthClick }: UserDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const {user} = useAuth()
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -46,31 +48,31 @@ export function UserDropdown({ auth, onSignOut, onAuthClick }: UserDropdownProps
       <button
         onClick={toggleDropdown}
         className="p-2 hover:bg-surface-100 rounded-lg group relative"
-        title={auth.isAuthenticated ? 'Account' : 'Sign In'}
+        title={user ? 'Account' : 'Sign In'}
       >
         <User className="h-5 w-5 text-surface-600" />
-        {auth.isAuthenticated && (
+        {user && (
           <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-secondary-500 rounded-full border-2 border-white"></span>
         )}
       </button>
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl border border-surface-200 shadow-xl z-50 overflow-hidden">
-          {auth.isAuthenticated ? (
+          {user ? (
             <>
               <div className="p-4 bg-gradient-to-r from-primary-600 to-secondary-500">
                 <div className="flex items-center space-x-3">
                   <div className="bg-white rounded-full w-10 h-10 flex items-center justify-center">
                     <span className="text-secondary-500 font-semibold">
-                      {auth.user?.name.charAt(0).toUpperCase()}
+                      {user?.name.charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <div>
-                    <p className="font-semibold text-white">{auth.user?.name}</p>
-                    <p className="text-sm text-white/80">{auth.user?.email}</p>
+                    <p className="font-semibold text-white">{user?.name}</p>
+                    <p className="text-sm text-white/80">{user?.email}</p>
                   </div>
                 </div>
-                {auth.user?.role === 'admin' && (
+                {user?.role === 'admin' && (
                   <div className="mt-2 flex items-center">
                     <Shield className="h-4 w-4 text-white/80 mr-1" />
                     <span className="text-xs text-white/80">Admin</span>
@@ -92,7 +94,7 @@ export function UserDropdown({ auth, onSignOut, onAuthClick }: UserDropdownProps
                   <Settings className="h-4 w-4 text-surface-400" />
                   <span>Settings</span>
                 </button>
-                {auth.user?.role === 'admin' && (
+                {user?.role === 'admin' && (
                   <button
                     onClick={() => handleNavigation('/admin')}
                     className="w-full text-left px-4 py-2 hover:bg-surface-50 flex items-center space-x-3"

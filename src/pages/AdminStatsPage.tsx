@@ -7,18 +7,16 @@ import {
 import { QuantumBackground } from '../components/QuantumBackground';
 import { AdminNav } from '../components/AdminNav';
 import type { AuthState } from '../types';
+import { useAuth } from "../context/AuthContext";
 
-interface AdminStatsPageProps {
-  auth: AuthState;
-}
-
-export function AdminStatsPage({ auth }: AdminStatsPageProps) {
+export function AdminStatsPage() {
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Redirect if not admin
-  if (!auth.user || auth.user.role !== 'admin') {
+  if (!user || user.role !== 'admin') {
     return (
       <div className="min-h-screen pt-20 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
         <div className="bg-white p-8 rounded-xl border border-surface-200 shadow-card max-w-md text-center">

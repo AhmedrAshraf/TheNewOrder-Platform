@@ -1,12 +1,51 @@
 import { BarChart3, Package, DollarSign, Star, Users, TrendingUp, Zap, ShoppingBag } from 'lucide-react';
 import type { Product, User } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 interface DashboardPageProps {
   user: User;
   products: Product[];
 }
 
-export function DashboardPage({ user, products }: DashboardPageProps) {
+export function DashboardPage({ products }: DashboardPageProps) {
+  const {user, loading} = useAuth()
+
+  if (loading) {
+    return <div className='bg-white z-10 h-full'>
+         <svg
+              className="animate-spin h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
+            </svg>
+            Loading...
+    </div>
+  }
+
+  if (!user) {
+    return (
+    <div className='bg-white z-10 h-full'>
+    return Please log in
+    </div>
+    )
+  }
+
+  
+  console.log("user", user);
   const userProducts = products.filter(product => product.creator === user.name);
   const hasApprovedProducts = userProducts.length > 0;
 

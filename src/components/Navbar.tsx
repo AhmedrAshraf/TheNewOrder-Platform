@@ -96,7 +96,7 @@ export function Navbar({
           </div>
 
           <div className="flex items-center space-x-4">
-            {auth.isAuthenticated && (
+            {user && (
               <>
                <button
                 onClick={onUploadClick}
@@ -123,12 +123,12 @@ export function Navbar({
                   )}
                 </div>
 
-                <NotificationCenter user={auth.user} />
+                <NotificationCenter user={user} />
               </>
             )}
             
             <UserDropdown 
-              auth={auth} 
+              auth={user} 
               onSignOut={onSignOut} 
               onAuthClick={onAuthClick} 
             />

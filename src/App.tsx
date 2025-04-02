@@ -83,153 +83,38 @@ function AppContent() {
   const [products, setProducts] = useState<Product[]>(MARKETPLACE_PRODUCTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOption, setFilterOption] = useState<'latest' | 'popular' | 'trending'>('popular');
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null);
-  const { setUser } = useAuth();
-
-  const [auth, setAuth] = useState<AuthState>({
-    isAuthenticated: false,
-    user: null
-  });
-  
+  const [auth, setAuth] = useState<AuthState>(null);
+  const { setUser , user} = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log("auth", auth);
-    
     const savedAuth = localStorage.getItem('authState');
+    
     if (savedAuth) {
       try {
-        const parsedAuth = JSON.parse(savedAuth);
-        setAuth(parsedAuth);
+        const parsedAuth = JSON.parse(savedAuth); 
+        setAuth(parsedAuth); 
       } catch (error) {
         console.error('Failed to parse saved auth state:', error);
-        localStorage.removeItem('authState');
       }
     }
   }, []);
-
-  useEffect(() => {
-    if (auth.isAuthenticated) {
-      localStorage.setItem('authState', JSON.stringify(auth));
-    } else {
-      localStorage.removeItem('authState');
-    }
-  }, [auth]);
-
-  const handleAuth = async (name:string, email: string, password: string, isSignUp: boolean) => {
-    console.log("name", name);
-    
-    try{
-      setLoading(true)
-    const isAdmin = email.includes('admin');
-    console.log("isSignUp", isSignUp);
-    const trimmedEmail = email.trim();
-    if(isSignUp){
-      const { data, error } = await supabase.auth.signUp({
-        email: trimmedEmail,
-        password: password,
-      })
-      
-      if(error){
-        console.error("error", error);
-        setError(error.message);
-      }
-      if (data.user === null) {
-        setError("User already exists");
-        return;
-      }
-      if(data){
-        console.log("data.user?.id", data.user?.id);
-        // ✅ Insert user row
-        const { error: insertError } = await supabase
-        .from('users')
-        .insert([{
-          id: data.user.id,
-          name,
-          email: trimmedEmail,
-          role: isAdmin ? "admin" : "user"
-        }]);
-
-        if (insertError) {
-        console.log("insertError", insertError);  
-        setError(insertError.message || "Error while inserting user.");
-        return;
-        }
-
-        // ✅ Fetch the full user row from your table
-        const { data: userRecord, error: fetchError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", data.user.id)
-        .single();
-        console.log("🚀 ~ handleAuth ~ userRecord:", userRecord)
-
-        if (fetchError || !userRecord) {
-        setError(fetchError?.message || "Unable to fetch user after signup");
-        return;
-        }
-        setUser(userRecord);
-        setAuth({isAuthenticated: true,user: userRecord,});
-
-      }
-    }else{
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: trimmedEmail,
-        password,
-      });
-      if (error) {
-        setError(error.message || "Login failed");
-        return;
-      }
-      
-      // ✅ Fetch from your users table
-      const { data: userRecord, error: fetchError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", data.user.id)
-        .maybeSingle();
-      
-      if (fetchError || !userRecord) {
-        setError(fetchError || "Could not find user data.");
-        return;
-      }
-      setUser(userRecord);
-      setAuth({
-        isAuthenticated: true,
-        user: userRecord,
-      });
-      
-    }
-    console.log("authentication works");
-    
-    setShowAuthModal(false);
-    navigate('/dashboard');
-  }catch(error){
-    console.error("Error", error?.message);
-    setError(error?.message)
-  }finally{
-    setLoading(false)
-  }
-  };
+  
 
   const handleSignOut = async () => {
+    console.log("user is logged out");
     const { error } = await supabase.auth.signOut()
     if(error){
       alert("Error" + error);
     }
     setUser(null)
     localStorage.removeItem('authState');
-    localStorage.removeItem('auth-storage');
-    setAuth({
-      isAuthenticated: false,
-      user: null
-    });
-    navigate('/');
+    localStorage.removeItem('userId');
+    window.location.href = '/'
   };
 
   const handleUploadClick = () => {
-    if (!auth.isAuthenticated) {
+    if (!auth) {
       setShowAuthModal(true);
     } else {
       navigate('/upload');
@@ -237,8 +122,8 @@ function AppContent() {
   };
 
   const handleProfileClick = () => {
-    if (auth.isAuthenticated) {
-      if (auth.user?.role === 'admin') {
+    if (auth) {
+      if (auth?.role === 'admin') {
         navigate('/admin');
       } else {
         navigate('/dashboard');
@@ -260,12 +145,17 @@ function AppContent() {
     const newProduct: Product = {
       ...product,
       id: `prod_${Math.random().toString(36).substr(2, 9)}`,
-      creator: auth.user?.name || 'Anonymous',
+      creator: auth?.name || 'Anonymous',
       pulses: 0
     };
     setProducts([...products, newProduct]);
     navigate('/marketplace');
   };
+
+
+  useEffect(()=>{
+    console.log(auth);
+  })
 
   return (
     <div className="min-h-screen bg-white flex flex-col relative">
@@ -273,7 +163,6 @@ function AppContent() {
       <QuantumBackground intensity="low" className="fixed inset-0 pointer-events-none" overlay={false} />
       
       <Navbar
-        auth={auth}
         onAuthClick={handleProfileClick}
         onUploadClick={handleUploadClick}
         onSearch={setSearchQuery}
@@ -294,15 +183,15 @@ function AppContent() {
             </>
           } />
           <Route path="/upload" element={<UploadPage onSubmit={handleProductSubmit} />} />
-          <Route path="/dashboard" element={<DashboardPage user={auth.user!} products={products} />} />
+          <Route path="/dashboard" element={<DashboardPage products={products} />} />
           <Route path="/marketplace" element={<MarketplacePage />} />
-          <Route path="/product/:id" element={<ProductDetailPage products={products} auth={auth} />} />
-          <Route path="/admin" element={<AdminPage auth={auth} />} />
-          <Route path="/admin/curation" element={<AdminCurationPage auth={auth} />} />
-          <Route path="/admin/users" element={<AdminUsersPage auth={auth} />} />
-          <Route path="/admin/stats" element={<AdminStatsPage auth={auth} />} />
-          <Route path="/admin/add-product" element={<AdminAddProductPage auth={auth} />} />
-          <Route path="/settings" element={<SettingsPage user={auth.user} />} />
+          <Route path="/product/:id" element={<ProductDetailPage products={products}/>} />
+          <Route path="/admin" element={<AdminPage/>} />
+          <Route path="/admin/curation" element={<AdminCurationPage/>} />
+          <Route path="/admin/users" element={<AdminUsersPage/>} />
+          <Route path="/admin/stats" element={<AdminStatsPage/>} />
+          <Route path="/admin/add-product" element={<AdminAddProductPage/>} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="/success" element={<SuccessPage />} />
           <Route path="/messages" element={<MessagesPage />} />
@@ -315,10 +204,7 @@ function AppContent() {
       {showAuthModal && (
         <AuthModal
           isOpen={showAuthModal}
-          onClose={() => {setShowAuthModal(false); setError(null);}}
-          onAuth={handleAuth}
-          loading={loading}
-          error={error}
+          onClose={() => {setShowAuthModal(false)}}
           />
       )}
 

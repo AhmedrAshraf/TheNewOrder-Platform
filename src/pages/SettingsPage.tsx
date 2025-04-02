@@ -3,12 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { User, Lock, Bell, CreditCard } from 'lucide-react';
 import { QuantumBackground } from '../components/QuantumBackground';
 import type { User as UserType } from '../types';
+import { useAuth } from "../context/AuthContext";
 
-interface SettingsPageProps {
-  user: UserType | null;
-}
-
-// Sample purchase history data
+// sample purchase history data
 const SAMPLE_PURCHASES = [
   {
     id: 'pur_1',
@@ -33,8 +30,9 @@ const SAMPLE_PURCHASES = [
   }
 ];
 
-export function SettingsPage({ user }: SettingsPageProps) {
+export function SettingsPage() {
   const navigate = useNavigate();
+    const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [formData, setFormData] = useState({
     name: user?.name || '',

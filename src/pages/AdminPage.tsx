@@ -8,13 +8,12 @@ import { useNotifications } from '../context/NotificationContext';
 import { QuantumBackground } from '../components/QuantumBackground';
 import { AdminNav } from '../components/AdminNav';
 import type { Workflow, User, AuthState } from '../types';
+import { useAuth } from "../context/AuthContext";
 
-interface AdminPageProps {
-  auth: AuthState;
-}
-
-export function AdminPage({ auth }: AdminPageProps) {
+export function AdminPage() {
   const navigate = useNavigate();
+    const { user } = useAuth();
+  
   const { addNotification } = useNotifications();
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [announcementTitle, setAnnouncementTitle] = useState('');
@@ -42,7 +41,7 @@ export function AdminPage({ auth }: AdminPageProps) {
   };
 
   // Redirect if not admin
-  if (!auth.user || auth.user.role !== 'admin') {
+  if (!user || user.role !== 'admin') {
     return (
       <div className="min-h-screen pt-20 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
         <div className="bg-white p-8 rounded-xl border border-surface-200 shadow-card max-w-md text-center">
@@ -79,7 +78,7 @@ export function AdminPage({ auth }: AdminPageProps) {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold font-poppins text-surface-900">Admin Dashboard</h1>
-              <p className="text-surface-600">Welcome back, {auth.user.name}</p>
+              <p className="text-surface-600">Welcome back, {user.name}</p>
             </div>
             <button 
               onClick={handleCreateAnnouncement}

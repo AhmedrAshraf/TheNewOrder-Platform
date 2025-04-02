@@ -4,10 +4,8 @@ import { Shield, Search, Plus, X, User, AlertCircle } from 'lucide-react';
 import { QuantumBackground } from '../components/QuantumBackground';
 import { AdminNav } from '../components/AdminNav';
 import type { AuthState } from '../types';
+import { useAuth } from "../context/AuthContext";
 
-interface AdminAddProductPageProps {
-  auth: AuthState;
-}
 
 // Sample registered users for demonstration
 const REGISTERED_USERS = [
@@ -26,7 +24,9 @@ interface Creator {
   isUnclaimed: boolean;
 }
 
-export function AdminAddProductPage({ auth }: AdminAddProductPageProps) {
+export function AdminAddProductPage() {
+    const { user } = useAuth();
+  
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreatorSearch, setShowCreatorSearch] = useState(false);
@@ -164,7 +164,7 @@ export function AdminAddProductPage({ auth }: AdminAddProductPageProps) {
   };
 
   // Redirect if not admin
-  if (!auth.user || auth.user.role !== 'admin') {
+  if (!user || user.role !== 'admin') {
     return (
       <div className="min-h-screen pt-20 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
         <div className="bg-white p-8 rounded-xl border border-surface-200 shadow-card max-w-md text-center">

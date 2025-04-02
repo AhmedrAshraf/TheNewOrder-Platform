@@ -8,7 +8,7 @@ import {
 import { loadStripe } from '@stripe/stripe-js';
 import { ChatModal } from '../components/ChatModal';
 import type { Product, AuthState, ConsultationOption } from '../types';
-
+import {useAuth} from "../context/AuthContext"
 interface ProductDetailPageProps {
   products: Product[];
   auth?: AuthState;
@@ -27,7 +27,10 @@ export function ProductDetailPage({ products, auth }: ProductDetailPageProps) {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [hasPulsed, setHasPulsed] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
-
+  const {user} = useAuth()
+  console.log("🚀 ~ ProductDetailPage ~ user:", user)
+  console.log("auth", auth);
+  
   useEffect(() => {
     const foundProduct = products.find(p => p.id === id);
     if (foundProduct) {
@@ -92,7 +95,7 @@ export function ProductDetailPage({ products, auth }: ProductDetailPageProps) {
   };
 
   const handlePulse = () => {
-    if (!auth?.isAuthenticated) {
+    if (!auth) {
       navigate('/login');
       return;
     }
@@ -111,7 +114,7 @@ export function ProductDetailPage({ products, auth }: ProductDetailPageProps) {
   };
 
   const handleBookConsultation = () => {
-    if (!auth?.isAuthenticated) {
+    if (!auth) {
       navigate('/login');
       return;
     }
@@ -238,15 +241,15 @@ export function ProductDetailPage({ products, auth }: ProductDetailPageProps) {
                   <div className="flex items-center gap-3">
                     <button 
                       onClick={handlePulse}
-                      disabled={!auth?.isAuthenticated || hasPulsed}
+                      disabled={!auth || hasPulsed}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                         hasPulsed 
                           ? 'bg-secondary-100 text-secondary-700 border border-secondary-200' 
-                          : auth?.isAuthenticated 
+                          : auth 
                             ? 'bg-surface-100 hover:bg-surface-200 text-surface-900 border border-surface-200' 
                             : 'bg-surface-100 text-surface-400 cursor-not-allowed'
                       }`}
-                      title={!auth?.isAuthenticated ? "Login to give a pulse" : hasPulsed ? "Already pulsed" : "Give a pulse"}
+                      title={!auth ? "Login to give a pulse" : hasPulsed ? "Already pulsed" : "Give a pulse"}
                     >
                       <Zap className={`h-5 w-5 ${hasPulsed ? 'text-secondary-500' : ''}`} />
                       <span>{hasPulsed ? "Pulsed!" : "Pulse"}</span>
@@ -526,13 +529,13 @@ export function ProductDetailPage({ products, auth }: ProductDetailPageProps) {
                 <p className="text-surface-500 text-sm">One-time purchase, lifetime access</p>
               </div>
               
-              <button
+            <button
                 onClick={handlePurchase}
                 disabled={isLoading}
                 className={`w-full bg-secondary-500 hover:bg-secondary-600 text-white rounded-lg py-3 px-4 transition-colors flex items-center justify-center gap-2 mb-4 ${
                   isLoading ? 'opacity-70 cursor-wait' : ''
                 }`}
-              >
+                >
                 {isLoading ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
@@ -544,7 +547,7 @@ export function ProductDetailPage({ products, auth }: ProductDetailPageProps) {
                     <span>Purchase Now</span>
                   </>
                 )}
-              </button>
+             </button>
               
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">

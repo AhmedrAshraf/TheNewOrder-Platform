@@ -1,7 +1,11 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { X, Mail, Lock, User, LogIn, UserPlus } from "lucide-react";
 import { QuantumBackground } from "./QuantumBackground";
 import { useClickOutside } from "../hooks/useClickOutside";
+import {useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import {useAuth} from "../context/AuthContext"
+import type {AuthState } from '../types';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -14,23 +18,173 @@ interface AuthModalProps {
 export function AuthModal({
   isOpen,
   onClose,
-  onAuth,
-  loading,
-  error
 }: AuthModalProps) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const modalRef: any = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { setUser } = useAuth();
+
   useClickOutside(modalRef, onClose);
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onAuth(name, email, password, isSignUp);
-  };
+    handleAuth(name, email, password, isSignUp);
+  };  
 
+  // const handleAuth = async (name:string, email: string, password: string, isSignUp: boolean) => {
+  //     console.log("name", name);
+      
+  //     try{
+  //       setLoading(true)
+  //     const isAdmin = email.includes('admin');
+  //     console.log("isSignUp", isSignUp);
+  //     const trimmedEmail = email.trim();
+  //     if(isSignUp){
+  //       const { data, error } = await supabase.auth.signUp({
+  //         email: trimmedEmail,
+  //         password: password,
+  //       })
+        
+  //       if(error){
+  //         console.error("error", error);
+  //         setError(error.message);
+  //       }
+  //       if (data.user === null) {
+  //         setError("User already exists");
+  //         return;
+  //       }
+  //       if(data){
+  //         console.log("data.user?.id", data.user?.id);
+  //         // ✅ Insert user row
+  //         const { error: insertError } = await supabase
+  //         .from('users')
+  //         .insert([{
+  //           id: data.user.id,
+  //           name,
+  //           email: trimmedEmail,
+  //           role: isAdmin ? "admin" : "user"
+  //         }]);
+  
+  //         if (insertError) {
+  //         console.log("insertError", insertError);  
+  //         setError(insertError.message || "Error while inserting user.");
+  //         return;
+  //         }
+  //         // localStorage.setItem('authState', JSON.stringify(userRecord));
+  //         localStorage.setItem('userId', data.user.id);
+  //       }
+  //     }else{
+  //       const { data, error } = await supabase.auth.signInWithPassword({
+  //         email: trimmedEmail,
+  //         password,
+  //       });
+  //       if (error) {
+  //         setError(error.message || "Login failed");
+  //         return;
+  //       }
+  //       // localStorage.setItem('authState', JSON.stringify(userTableData));
+  //       localStorage.setItem('userId', data.user.id);
+  //     }
+  //     console.log("authentication works");
+  //     onClose()
+  //     navigate('/dashboard');
+  //   }catch(error: any){
+  //     console.error("Error", error?.message);
+  //     setError(error?.message)
+  //   }finally{
+  //     setLoading(false)
+  //   }
+  //   };
+  
+
+  const handleAuth = async (name:string, email: string, password: string, isSignUp: boolean) => {
+    try {
+      setLoading(true)
+      const isAdmin = email.includes('admin');
+      const trimmedEmail = email.trim();
+      
+      if(isSignUp) {
+        const { data, error } = await supabase.auth.signUp({
+          email: trimmedEmail,
+          password: password,
+        })
+        
+        if(error) {
+          setError(error.message);
+          return;
+        }
+        if (data.user === null) {
+          setError("User already exists");
+          return;
+        }
+        
+        // Insert user row
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert([{
+            id: data.user.id,
+            name,
+            email: trimmedEmail,
+            role: isAdmin ? "admin" : "user"
+          }]);
+  
+        if (insertError) {
+          setError(insertError.message || "Error while inserting user.");
+          return;
+        }
+  
+        // Fetch the newly created user
+        const { data: userData } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+  
+        if (userData) {
+          setUser(userData); // This updates the auth context
+          localStorage.setItem('userId', data.user.id);
+          localStorage.setItem('authState', JSON.stringify(userData));
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: trimmedEmail,
+          password,
+        });
+        
+        if (error) {
+          setError(error.message || "Login failed");
+          return;
+        }
+  
+        // Fetch user data after login
+        const { data: userData } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+  
+        if (userData) {
+          setUser(userData); // This updates the auth context
+          localStorage.setItem('userId', data.user.id);
+          localStorage.setItem('authState', JSON.stringify(userData));
+        }
+      }
+      
+      onClose()
+      navigate('/dashboard');
+    } catch(error: any) {
+      setError(error?.message)
+    } finally {
+      setLoading(false)
+    }
+  };
+  
   return (
     <div className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50">
       <div ref={modalRef} className="relative w-full max-w-md mx-4">
