@@ -83,22 +83,8 @@ function AppContent() {
   const [products, setProducts] = useState<Product[]>(MARKETPLACE_PRODUCTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOption, setFilterOption] = useState<'latest' | 'popular' | 'trending'>('popular');
-  const [auth, setAuth] = useState<AuthState>(null);
   const { setUser , user} = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const savedAuth = localStorage.getItem('authState');
-    
-    if (savedAuth) {
-      try {
-        const parsedAuth = JSON.parse(savedAuth); 
-        setAuth(parsedAuth); 
-      } catch (error) {
-        console.error('Failed to parse saved auth state:', error);
-      }
-    }
-  }, []);
   
 
   const handleSignOut = async () => {
@@ -114,7 +100,7 @@ function AppContent() {
   };
 
   const handleUploadClick = () => {
-    if (!auth) {
+    if (!user) {
       setShowAuthModal(true);
     } else {
       navigate('/upload');
@@ -122,8 +108,8 @@ function AppContent() {
   };
 
   const handleProfileClick = () => {
-    if (auth) {
-      if (auth?.role === 'admin') {
+    if (user) {
+      if (user?.role === 'admin') {
         navigate('/admin');
       } else {
         navigate('/dashboard');
@@ -141,26 +127,11 @@ function AppContent() {
     navigate('/');
   };
 
-  const handleProductSubmit = (product: Omit<Product, 'id' | 'creator' | 'pulses'>) => {
-    const newProduct: Product = {
-      ...product,
-      id: `prod_${Math.random().toString(36).substr(2, 9)}`,
-      creator: auth?.name || 'Anonymous',
-      pulses: 0
-    };
-    setProducts([...products, newProduct]);
-    navigate('/marketplace');
-  };
-
-
-  useEffect(()=>{
-    console.log(auth);
-  })
 
   return (
     <div className="min-h-screen bg-white flex flex-col relative">
       <ScrollToTop />
-      <QuantumBackground intensity="low" className="fixed inset-0 pointer-events-none" overlay={false} />
+      {/* <QuantumBackground intensity="low" className="fixed inset-0 pointer-events-none" overlay={false} /> */}
       
       <Navbar
         onAuthClick={handleProfileClick}
@@ -182,7 +153,7 @@ function AppContent() {
               />
             </>
           } />
-          <Route path="/upload" element={<UploadPage onSubmit={handleProductSubmit} />} />
+          <Route path="/upload" element={<UploadPage />} />
           <Route path="/dashboard" element={<DashboardPage products={products} />} />
           <Route path="/marketplace" element={<MarketplacePage />} />
           <Route path="/product/:id" element={<ProductDetailPage products={products}/>} />

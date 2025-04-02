@@ -1,12 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Twitter, Linkedin, Github, Youtube } from 'lucide-react';
+import { QuantumBackground } from '../components/QuantumBackground';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-surface-50 border-t border-surface-200">
+    <footer className="bg-surface-50 border-t border-surface-200 relative">
+      <QuantumBackground intensity="low" className="fixed inset-0 pointer-events-none" overlay={false} />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand and Description */}

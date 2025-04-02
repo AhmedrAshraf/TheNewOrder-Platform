@@ -2,12 +2,10 @@ import React, { useState, useRef } from 'react';
 import { Upload, X, ArrowRight, CheckCircle, Clock, Video, Code, Database, Globe, Server } from 'lucide-react';
 import { QuantumBackground } from '../components/QuantumBackground';
 import type { Product } from '../types';
+import {useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
-interface UploadPageProps {
-  onSubmit: (product: Omit<Product, 'id' | 'creator' | 'pulses'>) => void;
-}
-
-export function UploadPage({ onSubmit }: UploadPageProps) {
+export function UploadPage() {
   const [dragActive, setDragActive] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [currentStep, setCurrentStep] = useState(1);
@@ -17,6 +15,7 @@ export function UploadPage({ onSubmit }: UploadPageProps) {
   const [showIntegrationInput, setShowIntegrationInput] = useState(false);
   const requirementInputRef = useRef<HTMLInputElement>(null);
   const integrationInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -32,7 +31,8 @@ export function UploadPage({ onSubmit }: UploadPageProps) {
     faq: [] as { question: string; answer: string }[],
     creatorBio: '',
     consultationAvailable: false,
-    consultationRate: ''
+    consultationRate: '',
+    status: 'pending',
   });
 
   const handleDrag = (e: React.DragEvent) => {
@@ -65,16 +65,37 @@ export function UploadPage({ onSubmit }: UploadPageProps) {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    console.log("handle Submit function called", formData);
+    const priceValue = formData.price.trim() === "" ? null : Number(formData.price);
+    const consultationRateValue = formData.consultationRate.trim() === "" ? null : Number(formData.consultationRate);
+  
     e.preventDefault();
-    onSubmit({
-      title: formData.title,
-      description: formData.description,
-      price: Number(formData.price),
-      category: formData.category,
-      image: formData.image,
-      tags: formData.tags.split(',').map(tag => tag.trim())
-    });
+    const { error } = await supabase
+    .from('solutions')
+    .insert([
+      { 
+        title: formData.title,
+        description: formData.description,
+        price: priceValue,
+        category: formData.category,
+        image: formData.image,
+        tags: formData.tags.split(',').map(tag => tag.trim()),
+        complexity: formData.complexity,
+        integrations: formData.integrations,
+        faq: formData.faq,
+        creatorBio: formData.creatorBio,
+        consultationAvailable: formData.consultationAvailable,
+        consultationRate: consultationRateValue,
+        status: formData.status
+      }
+    ])
+
+    if(error){
+      console.error('error', error);
+    }
+    console.log("✅ solutions added");
+    navigate('/marketplace');
   };
 
   const nextStep = () => {
@@ -203,8 +224,6 @@ export function UploadPage({ onSubmit }: UploadPageProps) {
 
   return (
     <div className="min-h-screen pt-20 px-4 sm:px-6 lg:px-8 bg-white relative">
-      <QuantumBackground intensity="low" className="absolute inset-0 pointer-events-none" overlay={true} />
-      
       <div className="max-w-3xl mx-auto relative">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold font-poppins mb-4">Submit Your AI Workflow</h1>
@@ -656,10 +675,6 @@ export function UploadPage({ onSubmit }: UploadPageProps) {
               <p className="text-green-700 mb-4">
                 Your AI workflow has been submitted for review. Our curation team will evaluate your submission and get back to you within 1-3 business days.
               </p>
-              <div className="bg-white p-4 rounded-lg inline-block">
-                <p className="text-sm text-surface-500">Submission ID</p>
-                <p className="font-mono text-surface-900">{Math.random().toString(36).substring(2, 15)}</p>
-              </div>
             </div>
             
             <div className="pb-24">

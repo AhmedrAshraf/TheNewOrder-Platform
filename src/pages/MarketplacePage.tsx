@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Grid3X3, ListFilter, TrendingUp, Zap, Search, ChevronDown, X, Check, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { QuantumBackground } from '../components/QuantumBackground';
 import type { Product } from '../types';
 
 const MARKETPLACE_PRODUCTS: Product[] = [
@@ -381,8 +380,6 @@ export function MarketplacePage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="relative">
-        <QuantumBackground intensity="low" className="absolute inset-0 pointer-events-none" overlay={false} />
-        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
             <div>
