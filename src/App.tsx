@@ -7,6 +7,7 @@ import { AuthModal } from './components/AuthModal';
 import { Footer } from './components/Footer';
 import { CookieBanner } from './components/CookieBanner';
 import { NotificationProvider } from './context/NotificationContext';
+import {AuthProvider, useAuth} from "./context/AuthContext"
 import { ScrollToTop } from './components/ScrollToTop';
 import { MarketplacePage } from './pages/MarketplacePage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
@@ -84,7 +85,8 @@ function AppContent() {
   const [filterOption, setFilterOption] = useState<'latest' | 'popular' | 'trending'>('popular');
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null);
-  
+  const { setUser } = useAuth();
+
   const [auth, setAuth] = useState<AuthState>({
     isAuthenticated: false,
     user: null
@@ -167,7 +169,7 @@ function AppContent() {
         setError(fetchError?.message || "Unable to fetch user after signup");
         return;
         }
-
+        setUser(userRecord);
         setAuth({isAuthenticated: true,user: userRecord,});
 
       }
@@ -192,7 +194,7 @@ function AppContent() {
         setError(fetchError || "Could not find user data.");
         return;
       }
-      
+      setUser(userRecord);
       setAuth({
         isAuthenticated: true,
         user: userRecord,
@@ -216,7 +218,9 @@ function AppContent() {
     if(error){
       alert("Error" + error);
     }
-    
+    setUser(null)
+    localStorage.removeItem('authState');
+    localStorage.removeItem('auth-storage');
     setAuth({
       isAuthenticated: false,
       user: null
@@ -262,8 +266,7 @@ function AppContent() {
     setProducts([...products, newProduct]);
     navigate('/marketplace');
   };
-  console.log("showAuthModal", showAuthModal);
-  
+
   return (
     <div className="min-h-screen bg-white flex flex-col relative">
       <ScrollToTop />
@@ -328,7 +331,9 @@ export default function App() {
   return (
     <Router>
       <NotificationProvider>
-        <AppContent />
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
       </NotificationProvider>
     </Router>
   );

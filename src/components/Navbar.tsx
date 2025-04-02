@@ -4,6 +4,7 @@ import { UserDropdown } from './UserDropdown';
 import { ChatInbox } from './ChatInbox';
 import { NotificationCenter } from './NotificationCenter';
 import type { AuthState } from '../types';
+import { useAuth } from "../context/AuthContext";
 
 interface NavbarProps {
   auth: AuthState;
@@ -25,6 +26,7 @@ export function Navbar({
   onSignOut = () => {} 
 }: NavbarProps) {
   const [showChatInbox, setShowChatInbox] = useState(false);
+  const { user } = useAuth();
 
   return (
     <nav className="fixed top-0 w-full bg-white border-b border-surface-200 z-50">
@@ -94,17 +96,17 @@ export function Navbar({
           </div>
 
           <div className="flex items-center space-x-4">
-            <button
-              onClick={onUploadClick}
-              className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-colors shadow-button hover:shadow-button-hover"
-              title="Submit Solution"
-            >
-              <PlusCircle className="h-4 w-4" />
-              <span>Submit Solution</span>
-            </button>
-            
             {auth.isAuthenticated && (
               <>
+               <button
+                onClick={onUploadClick}
+                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-colors shadow-button hover:shadow-button-hover"
+                title="Submit Solution"
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>Submit Solution</span>
+              </button>
+
                 <div className="relative">
                   <button
                     onClick={() => setShowChatInbox(!showChatInbox)}
