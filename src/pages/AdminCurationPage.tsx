@@ -1,71 +1,60 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  CheckCircle, XCircle, Clock, Filter, Search, Eye, ArrowUpDown,
-  MessageCircle, Star, Tag, Calendar, Save, Bell, Edit, Shield
-} from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Filter, Search, Eye, ArrowUpDown, MessageCircle, Star, Tag, Calendar, Save, Bell, Edit, Shield} from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 import { AdminNav } from '../components/AdminNav';
 import type { Workflow, AuthState } from '../types';
 import { useAuth } from "../context/AuthContext";
+import { supabase } from '../lib/supabase';
 
 // Sample workflows for demonstration
-const SAMPLE_WORKFLOWS: Workflow[] = [
-  {
-    id: 'wf1',
-    title: 'Email Marketing Automation',
-    description: 'Automate your email marketing campaigns with AI-powered content generation and scheduling',
-    price: 299,
-    image: 'https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?auto=format&fit=crop&q=80',
-    creator: 'marketing_guru',
-    category: 'automation',
-    tags: ['email', 'marketing', 'automation'],
-    status: 'pending',
-    submittedAt: '2025-06-10T14:30:00Z'
-  },
-  {
-    id: 'wf2',
-    title: 'Social Media Content Generator',
-    description: 'Generate engaging social media content across multiple platforms with one click',
-    price: 199,
-    image: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?auto=format&fit=crop&q=80',
-    creator: 'social_ai',
-    category: 'automation',
-    tags: ['social-media', 'content', 'ai'],
-    status: 'approved',
-    submittedAt: '2025-06-08T09:15:00Z',
-    reviewedAt: '2025-06-09T11:20:00Z',
-    reviewedBy: 'admin'
-  },
-  {
-    id: 'wf3',
-    title: 'Customer Support Chatbot',
-    description: 'AI-powered chatbot for 24/7 customer support with natural language processing',
-    price: 499,
-    image: 'https://images.unsplash.com/photo-1596524430615-b46475ddff6e?auto=format&fit=crop&q=80',
-    creator: 'support_ai',
-    category: 'integration',
-    tags: ['chatbot', 'support', 'ai'],
-    status: 'rejected',
-    submittedAt: '2025-06-07T16:45:00Z',
-    reviewedAt: '2025-06-09T10:30:00Z',
-    reviewedBy: 'admin',
-    rejectionReason: 'Similar product already exists. Please differentiate your offering.'
-  }
-];
+type Workflow = {
+  id: string;
+  title: string;
+  description: string;
+  status: 'pending' | 'approved' | 'rejected';
+  image: string;
+  creator: string;
+  submittedAt: string; 
+  price: number;
+  category: string;
+  tags: string[];
+  reviewedAt?: string; 
+  reviewedBy?: string;
+  curatorNotes?: string;
+  rejectionReason?: string;
+  rating?: number;
+  comments?: number;
+};
 
 export function AdminCurationPage() {
-    const { user } = useAuth();
-  const [workflows, setWorkflows] = useState<Workflow[]>(SAMPLE_WORKFLOWS);
-  const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { addNotification } = useNotifications();
+  const [workflows, setWorkflows] = useState<Workflow[]>([]); 
   const [filterStatus, setFilterStatus] = useState<string>('pending');
+  const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [rejectionReason, setRejectionReason] = useState<string>('');
   const [showRejectionModal, setShowRejectionModal] = useState<boolean>(false);
   const [curatorNotes, setCuratorNotes] = useState<string>('');
   const [showNotesHistory, setShowNotesHistory] = useState<boolean>(false);
-  const navigate = useNavigate();
-  const { addNotification } = useNotifications();
+
+  useEffect(() => {
+    const pendingSolution = async () => {
+        const { data, error } = await supabase
+            .from('solutions')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error("Error fetching solutions:", error);
+        } else {
+            setWorkflows(data);
+        }
+    };
+    pendingSolution();
+}, []);
 
   // Redirect if not admin
   if (!user || user.role !== 'admin') {
@@ -88,21 +77,34 @@ export function AdminCurationPage() {
     );
   }
 
-  const filteredWorkflows = workflows.filter(workflow => {
-    const matchesStatus = filterStatus === 'all' || workflow.status === filterStatus;
-    const matchesSearch = 
-      workflow.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      workflow.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      workflow.creator.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    return matchesStatus && matchesSearch;
-  });
+const filteredWorkflows = workflows.filter(workflow => {
+  const matchesStatus = filterStatus === 'all' || workflow?.status === filterStatus;
 
-  const approveWorkflow = (id: string) => {
-    setWorkflows(prev => 
-      prev.map(workflow => 
-        workflow.id === id 
-          ? { 
+  const searchTerm = searchQuery.toLowerCase();
+  const title = workflow?.title?.toLowerCase() || '';
+  const description = workflow?.description?.toLowerCase() || '';
+  const creator = workflow?.creator?.toLowerCase() || '';
+
+  const matchesSearch =  title.includes(searchTerm) || description.includes(searchTerm) || creator.includes(searchTerm);
+  return matchesStatus && matchesSearch;
+});
+
+const approveWorkflow = async (id: string) => {
+  try {
+    const { error } = await supabase
+      .from('solutions')
+      .update({ 
+        status: 'approved',
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: user?.name || 'admin',
+        curator_notes: curatorNotes || null
+      })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    setWorkflows(prev => prev.map(workflow => 
+        workflow.id === id ? { 
               ...workflow, 
               status: 'approved', 
               reviewedAt: new Date().toISOString(),
@@ -112,51 +114,55 @@ export function AdminCurationPage() {
           : workflow
       )
     );
-
-    // Add notification for the workflow creator
-    addNotification({
-      type: 'creator',
-      title: 'Workflow Approved',
-      message: `Your workflow "${selectedWorkflow?.title}" has been approved`,
-      link: '/dashboard'
-    });
-
+    addNotification({type: 'creator', title: 'Workflow Approved', message: `Your workflow "${selectedWorkflow?.title}" has been approved`, link: '/dashboard'});
     setSelectedWorkflow(null);
     setCuratorNotes('');
-  };
+  } catch (error) {
+    console.error("Error approving workflow:", error);
+    addNotification({ type: 'error', title: 'Approval Failed', message: 'There was an error approving the workflow'});
+  }
+};
 
-  const rejectWorkflow = (id: string) => {
-    if (!rejectionReason.trim()) return;
-    
+const rejectWorkflow = async (id: string) => {
+  try {
+    const { error } = await supabase
+      .from('solutions')
+      .update({ 
+        status: 'rejected',
+        rejection_reason: rejectionReason, 
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: user?.name || 'admin',
+        curator_notes: curatorNotes || null
+      })
+      .eq('id', id);
+
+    if (error) throw error;
+
     setWorkflows(prev => 
       prev.map(workflow => 
         workflow.id === id 
-          ? { 
-              ...workflow, 
-              status: 'rejected', 
-              reviewedAt: new Date().toISOString(),
-              reviewedBy: user?.name || 'admin',
-              rejectionReason,
-              curatorNotes: curatorNotes || undefined
-            } 
-          : workflow
+        ? { 
+            ...workflow, 
+            status: 'rejected', 
+            reviewedAt: new Date().toISOString(),
+            reviewedBy: user?.name || 'admin',
+            rejectionReason,
+            curatorNotes: curatorNotes || undefined
+          } 
+        : workflow
       )
     );
-
-    // Add notification for the workflow creator
-    addNotification({
-      type: 'creator',
-      title: 'Workflow Rejected',
-      message: `Your workflow "${selectedWorkflow?.title}" has been rejected`,
-      link: '/dashboard'
-    });
-
+    addNotification({type: 'creator', title: 'Workflow Rejected', message: `Your workflow "${selectedWorkflow?.title}" has been rejected`, link: '/dashboard'});
     setRejectionReason('');
     setShowRejectionModal(false);
     setSelectedWorkflow(null);
     setCuratorNotes('');
-  };
-
+  } catch (error) {
+    console.error("Error approving workflow:", error);
+    addNotification({type: 'error', title: 'Rejection Failed', message: 'There was an error approving the workflow'});
+  }
+};
+  
   const openRejectionModal = () => {
     setShowRejectionModal(true);
   };
@@ -200,7 +206,7 @@ export function AdminCurationPage() {
     <div className="min-h-screen bg-white">
       <div className="relative">
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold font-poppins text-surface-900">Solution Curation</h1>
@@ -294,11 +300,11 @@ export function AdminCurationPage() {
                   </div>
                   <div>
                     <p className="text-surface-600 text-sm">Approved Today</p>
-                    <p className="text-2xl font-bold">3</p>
+                    <p className="text-2xl font-bold">{workflows.filter(w => w.status === 'approved').length}</p>
                   </div>
                   <div>
                     <p className="text-surface-600 text-sm">Rejected Today</p>
-                    <p className="text-2xl font-bold">1</p>
+                    <p className="text-2xl font-bold">{workflows.filter(w => w.status === 'rejected').length}</p>
                   </div>
                   <div>
                     <p className="text-surface-600 text-sm">Avg. Review Time</p>
@@ -472,6 +478,8 @@ export function AdminCurationPage() {
                   </div>
                   
                   {filteredWorkflows.length === 0 ? (
+                    console.log("filteredWorkflows", filteredWorkflows),
+                    
                     <div className="bg-white rounded-xl p-8 text-center border border-surface-200 shadow-card">
                       <p className="text-surface-600">No submissions found</p>
                     </div>
