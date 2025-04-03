@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { formatDistanceToNow } from "date-fns";
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Package, DollarSign, Star, Users, TrendingUp, Shield, 
@@ -19,9 +20,13 @@ export function AdminPage() {
   const [announcementTitle, setAnnouncementTitle] = useState('');
   const [announcementMessage, setAnnouncementMessage] = useState('');
   const [users, setUsers] = useState<User[]>([]);
-  const [solution, setSolution] = useState([])
-  const [pendingList, setPendingList] = useState([])
-  
+  const [solution, setSolution] = useState([]);
+  const [pendingList, setPendingList] = useState([]);
+  const [RecentSolution, setRecentSolution] = useState([]);
+  const [latestUserTime, setLatestUserTime] = useState(null);
+  const [latestApprovalTime, setLatestApprovalTime] = useState(null)
+  const [newOrderCompleted, setNewOrderCompleted] = useState(null)
+
   const fetchUser = async () => {
     const { data, error } = await supabase
       .from('users')
@@ -64,6 +69,90 @@ export function AdminPage() {
     }
   };
   fetchPendingReviews().then(pendingReviews => setPendingList(pendingReviews.length));
+
+  const RecentSubmissions = async () => {
+    const { data, error } = await supabase
+      .from('solutions')
+      .select()
+      .eq('status', 'pending');
+
+    if (error) {
+      console.log("error", error);
+    } else {
+      setRecentSolution(data)
+    }
+  };
+  useEffect(()=>{
+    RecentSubmissions()
+  }, [])
+
+
+  useEffect(() => {
+    const fetchLatestUser = async () => {
+      const { data, error } = await supabase
+        .from("users")
+        .select("created_at")
+        .order("created_at", { ascending: false }) 
+        .limit(1); 
+      if (error) {
+        console.error("Error fetching latest user:", error);
+        return;
+      }
+      if (data.length > 0) {
+        const latestTime = new Date(data[0].created_at);
+        setLatestUserTime(formatDistanceToNow(latestTime, { addSuffix: true }));
+      }
+    };
+
+    const fetchLatestApproval = async () => {
+      const { data, error } = await supabase
+        .from("solutions") 
+        .select("approved_at")
+        .order("approved_at", { ascending: false }) 
+        .limit(1);
+
+        console.log("User Data:", data);
+      if (error) {
+        console.error("Error fetching latest approved solution:", error);
+        return;
+      }
+
+      if (data.length > 0 && data[0].created_at) {
+        const latestTime = new Date(data[0].created_at);
+        if (!isNaN(latestTime.getTime())) { 
+          setLatestApprovalTime(formatDistanceToNow(latestTime, { addSuffix: true }));
+        } else {
+          setLatestApprovalTime("Invalid date");
+        }
+      } else {
+        setLatestApprovalTime("No approved solution found");
+      }
+      
+    };
+
+    const fetchNewOrder = async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("created_at")
+        .order("created_at", { ascending: false }) 
+        .limit(1); 
+
+      if (error) {
+        console.error("Error fetching latest user:", error);
+        return;
+      }
+      if (data.length > 0) {
+        const latestTime = new Date(data[0].created_at);
+        setNewOrderCompleted(formatDistanceToNow(latestTime, { addSuffix: true }));
+      }else{
+        setNewOrderCompleted("No sale found")
+      }
+    };
+
+    fetchNewOrder()
+    fetchLatestApproval();
+    fetchLatestUser();
+  }, []);
 
   const handleCreateAnnouncement = () => {
     setShowAnnouncementModal(true);
@@ -172,29 +261,22 @@ export function AdminPage() {
                   View All <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
-              
-              <div className="space-y-4">
-                {[1, 2, 3].map((_, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-4 p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors cursor-pointer"
-                    onClick={() => navigate('/admin/curation')}
-                  >
-                    <img
-                      src={`https://images.unsplash.com/photo-${1611162617474 + index}-5b21e879e113?auto=format&fit=crop&q=80`}
-                      alt="Submission"
-                      className="w-12 h-12 rounded-lg object-cover"
-                    />
+
+              {RecentSolution.map((item, index)=>{
+                 const timeAgo = formatDistanceToNow(new Date(item.created_at), { addSuffix: true });
+                return(
+                <div key={index} onClick={() => navigate('/admin/curation')} className="flex items-center gap-4 p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors cursor-pointer">
+                    <img src={item.image} alt="Submission" className="w-12 h-12 rounded-lg object-cover"/>
                     <div className="flex-1">
-                      <h3 className="font-medium text-surface-900">New AI Solution #{index + 1}</h3>
-                      <p className="text-sm text-surface-600">Submitted 2 hours ago</p>
+                      <h3 className="font-medium text-surface-900">{item?.title}</h3>
+                      <p className="text-sm text-surface-600">Submitted {timeAgo}</p>
                     </div>
                     <span className="px-2 py-1 bg-yellow-500/20 text-yellow-600 text-xs rounded-full flex items-center gap-1">
-                      Pending
+                    {item?.status}  
                     </span>
-                  </div>
-                ))}
-              </div>
+                </div>
+                )
+                })}
             </div>
 
             {/* Recent Activity */}
@@ -205,12 +287,11 @@ export function AdminPage() {
                   View All <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
-              
               <div className="space-y-4">
                 {[
-                  { action: 'New user registered', time: '10 minutes ago' },
-                  { action: 'Solution approved', time: '1 hour ago' },
-                  { action: 'New sale completed', time: '2 hours ago' }
+                  { action: 'New user registered', time: latestUserTime },
+                  { action: 'Solution approved', time: latestApprovalTime },
+                  { action: 'New sale completed', time: newOrderCompleted }
                 ].map((activity, index) => (
                   <div key={index} className="p-4 bg-surface-50 rounded-lg">
                     <div className="flex items-center justify-between">
