@@ -4,7 +4,6 @@ import {
   BarChart3, TrendingUp, DollarSign, Users, Package, Calendar,
   ArrowUp, ArrowDown, Download, Filter, ChevronDown, ChevronUp
 } from 'lucide-react';
-import { QuantumBackground } from '../components/QuantumBackground';
 import { AdminNav } from '../components/AdminNav';
 import type { AuthState } from '../types';
 import { useAuth } from "../context/AuthContext";
@@ -128,8 +127,6 @@ export function AdminStatsPage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="relative">
-        <QuantumBackground intensity="low" className="absolute inset-0 pointer-events-none" overlay={true} />
-        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
           <div className="flex items-center justify-between mb-8">
             <div>

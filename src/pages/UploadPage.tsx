@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import { Upload, X, ArrowRight, CheckCircle, Clock, Video, Code, Database, Globe, Server } from 'lucide-react';
-import { QuantumBackground } from '../components/QuantumBackground';
 import type { Product } from '../types';
 import {useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';

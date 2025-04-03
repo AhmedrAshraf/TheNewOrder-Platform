@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Lock, Bell, CreditCard } from 'lucide-react';
-import { QuantumBackground } from '../components/QuantumBackground';
 import type { User as UserType } from '../types';
 import { useAuth } from "../context/AuthContext";
 
@@ -306,11 +305,7 @@ export function SettingsPage() {
           </div>
         </div>
       </div>
-      
-      {/* Footer with quantum animation */}
-      <div className="h-24 relative">
-        <QuantumBackground intensity="low" className="absolute inset-0" overlay={false} />
-      </div>
+
     </div>
   );
 }

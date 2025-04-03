@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle, ArrowRight, Download, MessageCircle, Rocket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { QuantumBackground } from '../components/QuantumBackground';
 
 export function SuccessPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -15,8 +14,6 @@ export function SuccessPage() {
   return (
     <div className="min-h-screen pt-20 bg-white">
       <div className="relative">
-        <QuantumBackground intensity="low" className="absolute inset-0 pointer-events-none" overlay={true} />
-        
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="bg-white rounded-xl p-8 border border-surface-200 shadow-card">
             <div className="text-center mb-8">

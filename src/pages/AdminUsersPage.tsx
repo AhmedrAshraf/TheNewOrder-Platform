@@ -4,7 +4,6 @@ import {
   Users, Search, Filter, ChevronDown, ChevronUp, MoreHorizontal,
   UserPlus, Mail, Shield, Ban, Eye, Download, Trash, Edit, XCircle
 } from 'lucide-react';
-import { QuantumBackground } from '../components/QuantumBackground';
 import { AdminNav } from '../components/AdminNav';
 import type { AuthState } from '../types';
 
@@ -182,8 +181,6 @@ export function AdminUsersPage({ auth }: AdminUsersPageProps) {
   return (
     <div className="min-h-screen bg-white">
       <div className="relative">
-        <QuantumBackground intensity="low" className="absolute inset-0 pointer-events-none" overlay={true} />
-        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
           <div className="flex items-center justify-between mb-8">
             <div>
