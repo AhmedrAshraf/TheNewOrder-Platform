@@ -222,6 +222,7 @@ export function AuthModal({
             {error && <p className="text-red-500 bg-red-50 rounded-lg p-4 text-center mt-2 text-sm">Error: {error}</p>}
             {isSignUp && (
               <div>
+              <div>
                 <label className="block text-sm font-medium mb-2 text-surface-700">Name</label>
                 <div className="relative">
                   <User className="absolute left-3 top-2.5 h-5 w-5 text-surface-400" />
@@ -234,6 +235,16 @@ export function AuthModal({
                     required
                   />
                 </div>
+              </div>
+                {/* <div className="mt-3">
+                  <label className="block text-sm font-medium mb-2 text-surface-700">Role</label>
+                  <div className="p-2 border rounded-xl">
+                      <select name="role" id="role">
+                        <option value="user">user</option>
+                        <option value="admin">admin</option>
+                      </select>
+                  </div>
+                </div> */}
               </div>
             )}
             <div>

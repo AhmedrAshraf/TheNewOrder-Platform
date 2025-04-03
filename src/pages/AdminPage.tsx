@@ -8,6 +8,7 @@ import { useNotifications } from '../context/NotificationContext';
 import { AdminNav } from '../components/AdminNav';
 import type { Workflow, User, AuthState } from '../types';
 import { useAuth } from "../context/AuthContext";
+import { supabase } from '../lib/supabase';
 
 export function AdminPage() {
   const navigate = useNavigate();
@@ -17,6 +18,52 @@ export function AdminPage() {
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [announcementTitle, setAnnouncementTitle] = useState('');
   const [announcementMessage, setAnnouncementMessage] = useState('');
+  const [users, setUsers] = useState<User[]>([]);
+  const [solution, setSolution] = useState([])
+  const [pendingList, setPendingList] = useState([])
+  
+  const fetchUser = async () => {
+    const { data, error } = await supabase
+      .from('users')
+      .select();
+
+    if (error) {
+      console.log("error", error);
+      return [];
+    } else {
+      return data || [];
+    }
+  };
+  fetchUser().then(fetchedUsers => setUsers(fetchedUsers.length));
+
+  const fetchSolution = async () => {
+    const { data, error } = await supabase
+      .from('solutions')
+      .select();
+
+    if (error) {
+      console.log("error", error);
+      return [];
+    } else {
+      return data || [];
+    }
+  };
+  fetchSolution().then(fetchedSolution => setSolution(fetchedSolution.length));
+
+  const fetchPendingReviews = async () => {
+    const { data, error } = await supabase
+      .from('solutions')
+      .select()
+      .eq('status', 'pending');
+
+    if (error) {
+      console.log("error", error);
+      return [];
+    } else {
+      return data || [];
+    }
+  };
+  fetchPendingReviews().then(pendingReviews => setPendingList(pendingReviews.length));
 
   const handleCreateAnnouncement = () => {
     setShowAnnouncementModal(true);
@@ -62,10 +109,10 @@ export function AdminPage() {
 
   // Admin dashboard stats
   const stats = [
-    { label: 'Total Users', value: '1,245', icon: Users, change: '+12%', color: 'from-blue-500 to-blue-700' },
-    { label: 'Total Solutions', value: '328', icon: Package, change: '+8%', color: 'from-purple-500 to-purple-700' },
+    { label: 'Total Users', value: users, icon: Users, change: '+12%', color: 'from-blue-500 to-blue-700' },
+    { label: 'Total Solutions', value: solution, icon: Package, change: '+8%', color: 'from-purple-500 to-purple-700' },
     { label: 'Revenue', value: '$48,290', icon: DollarSign, change: '+24%', color: 'from-green-500 to-green-700' },
-    { label: 'Pending Reviews', value: '12', icon: Clock, change: '-3%', color: 'from-yellow-500 to-yellow-700' }
+    { label: 'Pending Reviews', value: pendingList, icon: Clock, change: '-3%', color: 'from-yellow-500 to-yellow-700' }
   ];
 
   return (
