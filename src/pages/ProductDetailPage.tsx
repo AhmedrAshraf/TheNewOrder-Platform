@@ -541,7 +541,7 @@ export function ProductDetailPage() {
                 </div>
                 <div>
                   <p className="font-medium text-surface-900">{product.creator?.creator_name}</p>
-                  <p className="text-sm text-surface-500">AI Developer & Consultant</p>
+                  <p className="text-sm text-surface-500">{user?.title}</p>
                 </div>
               </div>
               
@@ -559,9 +559,9 @@ export function ProductDetailPage() {
               </div>
               
               <p className="text-sm text-surface-600 mb-3">
-                Expert in AI and machine learning with over 10 years of experience building innovative solutions for businesses.
+                {user?.bio}
               </p>
-              
+              {user?.id !== product.creator?.creator_id && (
               <button 
                 onClick={handleBookConsultation}
                 className="w-full bg-surface-100 hover:bg-surface-200 text-surface-900 rounded-lg py-3 px-4 transition-colors flex items-center justify-center gap-2 border border-surface-200 mb-4"
@@ -569,7 +569,7 @@ export function ProductDetailPage() {
                 <MessageSquare className="h-4 w-4 text-secondary-500" />
                 <span>Book Consultation</span>
               </button>
-
+              )}
               <div className="space-y-2 text-sm text-surface-600">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-secondary-500" />

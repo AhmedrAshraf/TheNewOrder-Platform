@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Loader2, CreditCard, CheckCircle, Shield, Star, MessageSquare } from 'lucide-react';
 import { useClickOutside } from '../hooks/useClickOutside';
 import type { Product, User, ChatMessage, ConsultationOption } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface ChatModalProps {
   isOpen: boolean;
@@ -16,110 +17,215 @@ export function ChatModal({ isOpen, onClose, product, user, consultationOptions 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [showProposalForm, setShowProposalForm] = useState(false);
-  const [proposal, setProposal] = useState({
-    hours: 1,
-    rate: 150,
-    description: ''
-  });
+  const [chatId, setChatId] = useState<string | null>(null);
+  const [proposal, setProposal] = useState({hours: 1, rate: 150,description: ''});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderCompleted, setOrderCompleted] = useState(false);
   const [showCompletionConfirmation, setShowCompletionConfirmation] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-
   useClickOutside(modalRef, onClose);
 
-  // Generate a random creator ID for demo purposes
-  const creatorId = 'creator-123';
+  const creatorId = product.user_id;
   const creatorName = product.creator?.creator_name;
 
-  useEffect(() => {
-    if (isOpen) {
-      // Add initial welcome message
-      const initialMessage: ChatMessage = {
-        id: 'system-welcome',
-        senderId: 'system',
-        senderName: 'System',
-        receiverId: user?.id || 'guest',
-        content: `Welcome to your consultation chat with ${creatorName} about "${product.title}". Please select an option below to get started.`,
-        timestamp: new Date().toISOString(),
-        isRead: false,
-        type: 'system'
-      };
-      
-      setMessages([initialMessage]);
+  useEffect(()=>{
+    window.scrollTo(0,200)
+    },[messages])
+
+
+  useEffect(() => {    
+    if(user && user.id === creatorId){
+      setSelectedOption(true);
     }
-  }, [isOpen, product, creatorName, user]);
+  }, [user, creatorId]);
+  
+  
+  useEffect(() => {
+    if (isOpen && user) {
+      const isCreator = user.id === creatorId; //agar same hogaya tw true hoga agar true howa tw null warna userid 
+      const buyerId = isCreator ? null : user.id; 
+      const sellerId = creatorId;
+      
+      const fetchMessages = async () => {
+        try {
+          let query = supabase
+          .from('chats')
+          .select('id')
+          .eq('solution_id', product.id);
 
-  const handleOptionSelect = (option: ConsultationOption) => {
+          if (isCreator) {
+            query = query.eq('seller_id', sellerId);
+          }  else {
+            query = query
+              .eq('buyer_id', buyerId)
+              .eq('seller_id', sellerId);
+          }
+          
+          const { data: fetchChat, error: fetchError } = await query.maybeSingle();
+          if (fetchError) {
+            console.error("Error while fetching chat:", fetchError);
+            return;
+          }
+            
+          if (fetchChat) {
+            setSelectedOption(true); 
+            setChatId(fetchChat.id);
+            
+            const { data: messagesData, error: messagesError } = await supabase
+              .from('messages')
+              .select('*')
+              .eq('chat_id', fetchChat.id)
+              .order('created_at', { ascending: true });
+  
+            if (messagesError) {
+              console.error("Error while fetching messages:", messagesError);
+              return;
+            }
+  
+            setMessages(messagesData || []);
+          }
+        } catch (error) {
+          console.error("Error fetching messages:", error);
+        }
+      };
+  
+      fetchMessages();
+    }
+  }, [isOpen, user, creatorId, product.id]);
+  
+  const handleOptionSelect = async (option: ConsultationOption) => {
     setSelectedOption(option);
-    
-    // Add user message
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      senderId: user?.id || 'guest',
-      senderName: user?.name || 'Guest',
-      receiverId: creatorId,
-      content: option.title,
-      timestamp: new Date().toISOString(),
-      isRead: true,
-      type: 'text'
-    };
-    
-    // Add creator response
-    const creatorResponse: ChatMessage = {
-      id: `creator-${Date.now() + 1}`,
-      senderId: creatorId,
-      senderName: creatorName,
-      receiverId: user?.id || 'guest',
-      content: `Thanks for reaching out about "${option.title}". I'd be happy to help you with this. Could you please provide more details about your specific needs?`,
-      timestamp: new Date(Date.now() + 1000).toISOString(),
-      isRead: false,
-      type: 'text'
-    };
-    
-    setMessages(prev => [...prev, userMessage, creatorResponse]);
-  };
 
-  const handleSendMessage = () => {
+    if (!user || !user.id) {
+      console.error("User not authenticated");
+      return;
+    }
+    const isCreator = user.id === creatorId;
+    let buyerId = user.id;
+    let sellerId = creatorId;
+
+    if (isCreator) {
+      console.warn("Creator cannot initiate chat - need a buyer");
+      alert("Creator cannot initiate chat - need a buyer");
+      return;
+    }
+    
+    try {
+      const { data: fetchChat, error: fetchError } = await supabase
+      .from('chats')
+      .select()
+      .eq('buyer_id', buyerId)
+      .eq('seller_id', sellerId)
+      .eq('solution_id', product.id)
+      .maybeSingle();
+
+      if (fetchError) {
+        console.error("Error while fetching chat:", fetchError);
+        return;
+      }  
+  
+       if (!fetchChat) {
+          const { data, error } = await supabase
+            .from('chats')
+            .insert([{ 
+              buyer_id: buyerId, 
+              seller_id: sellerId, 
+              solution_id: product.id 
+            }])
+            .select()
+            .maybeSingle()
+    
+          if (error) {
+            console.error("Getting error while inserting chat", error);
+            return;
+          }
+    
+          if (data ) {
+            setChatId(data.id);
+            const { data:messages, error:messagesError } = await supabase
+            .from('messages')
+            .insert([
+              {
+                chat_id: data.id,
+                sender_id: user.id,
+                message: option.title,
+                is_read: false,
+                type: 'buyer' 
+              }
+            ])
+            .select();
+            
+          if (messagesError) {
+            console.error("Error while inserting message:", messagesError);
+            return;
+          }
+          
+          if (messages) {
+            setMessages(prev => [...prev, ...messages]);
+          }
+          }
+      } else {
+        setChatId(fetchChat.id);
+        
+        const { data:messages, error:messagesError } = await supabase
+          .from('messages')
+          .insert([
+            {
+              chat_id: fetchChat.id,
+              sender_id: user.id,
+              message: option.title,
+              is_read: false,
+              type: 'buyer' 
+            }
+          ])
+          .select();
+          
+        if (messagesError) {
+          console.error("Error while inserting message:", messagesError);
+          return;
+        }
+        
+        if (messages) {
+          setMessages(prev => [...prev, ...messages]);
+        }
+      }
+    } catch (error) {
+      console.error("Error while inserting chat:", error);
+    }
+  };
+  const handleSendMessage =async() => {
     if (!newMessage.trim()) return;
     
     // Add user message
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      senderId: user?.id || 'guest',
-      senderName: user?.name || 'Guest',
-      receiverId: creatorId,
-      content: newMessage,
-      timestamp: new Date().toISOString(),
-      isRead: true,
-      type: 'text'
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
-    setNewMessage('');
-    
-    // Simulate creator response after a short delay
-    setTimeout(() => {
-      const creatorResponse: ChatMessage = {
-        id: `creator-${Date.now()}`,
-        senderId: creatorId,
-        senderName: creatorName,
-        receiverId: user?.id || 'guest',
-        content: "I understand your requirements. I can help you with this project. Would you like me to prepare a proposal with estimated hours and cost?",
-        timestamp: new Date().toISOString(),
-        isRead: false,
-        type: 'text'
-      };
-      
-      setMessages(prev => [...prev, creatorResponse]);
-      
-      // Show proposal form option for creator
-      if (messages.length > 3 && !showProposalForm) {
-        setShowProposalForm(true);
-      }
-    }, 1000);
-  };
+    try{
+      const { data:messages, error:messagesError } = await supabase
+      .from('messages')
+      .insert([
+        {
+          chat_id: chatId,
+          sender_id: user.id,
+          message: newMessage,
+          is_read: false,
+          type: user.id === creatorId ? 'seller' : 'buyer' 
+        }
+      ])
+      .select()
+      .maybeSingle();
 
+      if (messagesError) {
+        console.error("Error while inserting message:", messagesError);
+        return;
+      }
+      // Update messages state with the new message 
+      console.log("messages inserted", messages);
+      setMessages(prev => [...prev, messages]);
+    }catch(error){
+      console.error("Error while inserting message:", error);
+    }
+    setNewMessage('');
+    };
+
+    
   const handleSendProposal = () => {
     setIsSubmitting(true);
     
@@ -252,20 +358,14 @@ export function ChatModal({ isOpen, onClose, product, user, consultationOptions 
         {/* Chat Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((message) => (
-            <div 
-              key={message.id}
-              className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
+            <div key={message.id} className={`flex ${message.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}
             >
               <div 
-                className={`max-w-[80%] rounded-xl p-3 ${
-                  message.type === 'system' 
-                    ? 'bg-surface-100 text-surface-600' 
-                    : message.senderId === user?.id 
-                      ? 'bg-gradient-to-r from-primary-600 to-secondary-500 text-white' 
-                      : 'bg-surface-100 text-surface-900'
+                className={`max-w-[80%] rounded-xl p-3 ${ message.type === 'system' ? 'bg-surface-100 text-surface-600' 
+                    : message.sender_id === user?.id ? 'bg-gradient-to-r from-primary-600 to-secondary-500 text-white' : 'bg-surface-100 text-surface-900'
                 }`}
               >
-                {message.type !== 'system' && message.senderId !== user?.id && (
+                {message.type !== 'system' && message.sender_id !== user?.id && (
                   <p className="text-xs text-surface-500 mb-1">{message.senderName}</p>
                 )}
                 
@@ -273,7 +373,7 @@ export function ChatModal({ isOpen, onClose, product, user, consultationOptions 
                   <div className="space-y-2">
                     <div className="bg-white rounded-xl p-4 border border-surface-200">
                       <h4 className="font-medium mb-2">Consultation Proposal</h4>
-                      <p className="text-sm mb-2">{message.content}</p>
+                      <p className="text-sm mb-2">{message.message}</p>
                       <div className="flex justify-between text-sm">
                         <span>Hours: {message.metadata?.hours}</span>
                         <span>Rate: ${proposal.rate}/hr</span>
@@ -303,11 +403,11 @@ export function ChatModal({ isOpen, onClose, product, user, consultationOptions 
                     </div>
                   </div>
                 ) : (
-                  <p>{message.content}</p>
+                  <p>{message.message}</p>
                 )}
                 
                 <p className="text-xs opacity-70 mt-1 text-right">
-                  {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
             </div>
