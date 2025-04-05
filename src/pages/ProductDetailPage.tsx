@@ -61,7 +61,7 @@ export function ProductDetailPage() {
 
   const handlePulse = async() => {
     if (!user) {
-      navigate('/login');
+      setShowAuthModal(true);
       return;
     }
 
@@ -92,7 +92,7 @@ export function ProductDetailPage() {
 
   const handleBookConsultation = () => {
     if (!user) {
-      navigate('/login');
+      setShowAuthModal(true);
       return;
     }
     
