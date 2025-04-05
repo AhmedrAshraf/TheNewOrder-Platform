@@ -30,7 +30,7 @@ export function ChatModal({ isOpen, onClose, product, user, consultationOptions 
 
   // Generate a random creator ID for demo purposes
   const creatorId = 'creator-123';
-  const creatorName = product.creator;
+  const creatorName = product.creator?.creator_name;
 
   useEffect(() => {
     if (isOpen) {

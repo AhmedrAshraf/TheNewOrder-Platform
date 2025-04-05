@@ -83,7 +83,8 @@ const filteredWorkflows = workflows.filter(workflow => {
   const searchTerm = searchQuery.toLowerCase();
   const title = workflow?.title?.toLowerCase() || '';
   const description = workflow?.description?.toLowerCase() || '';
-  const creator = workflow?.creator?.toLowerCase() || '';
+  const creator = workflow?.creator?.creator_name?.toLowerCase() || '';
+  console.log("🚀 ~ AdminCurationPage ~ creator:", creator)
 
   const matchesSearch =  title.includes(searchTerm) || description.includes(searchTerm) || creator.includes(searchTerm);
   return matchesStatus && matchesSearch;
@@ -95,7 +96,7 @@ const approveWorkflow = async (id: string) => {
       .from('solutions')
       .update({ 
         status: 'approved',
-        reviewed_at: new Date().toISOString(),
+        approved_at: new Date().toISOString(),
         reviewed_by: user?.name || 'admin',
         curator_notes: curatorNotes || null
       })
@@ -342,7 +343,7 @@ const rejectWorkflow = async (id: string) => {
                         </div>
                         <div>
                           <p className="text-surface-600 text-sm">Submitted By</p>
-                          <p className="font-medium">{selectedWorkflow.creator}</p>
+                          <p className="font-medium">{selectedWorkflow.creator.creator_name}</p>
                         </div>
                         <div>
                           <p className="text-surface-600 text-sm">Submitted On</p>
@@ -506,11 +507,11 @@ const rejectWorkflow = async (id: string) => {
                               <div className="flex items-center justify-between mt-2">
                                 <div className="flex items-center gap-4">
                                   <span className="text-sm text-surface-500">
-                                    By {workflow.creator}
+                                    By {workflow?.creator?.creator_name}
                                   </span>
                                   <span className="text-sm text-surface-500 flex items-center gap-1">
                                     <Calendar className="h-3 w-3" />
-                                    {new Date(workflow.submittedAt).toLocaleDateString()}
+                                    {new Date(workflow.created_at).toLocaleDateString()}
                                   </span>
                                   <span className="text-sm font-medium">${workflow.price}</span>
                                 </div>

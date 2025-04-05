@@ -3,10 +3,13 @@ import { Upload, X, ArrowRight, CheckCircle, Clock, Video, Code, Database, Globe
 import type { Product } from '../types';
 import {useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 export function UploadPage() {
   const [dragActive, setDragActive] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  console.log("files", files);
+  
   const [currentStep, setCurrentStep] = useState(1);
   const [newRequirement, setNewRequirement] = useState('');
   const [newIntegration, setNewIntegration] = useState('');
@@ -14,6 +17,7 @@ export function UploadPage() {
   const [showIntegrationInput, setShowIntegrationInput] = useState(false);
   const requirementInputRef = useRef<HTMLInputElement>(null);
   const integrationInputRef = useRef<HTMLInputElement>(null);
+  const {user} = useAuth() 
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -22,7 +26,7 @@ export function UploadPage() {
     price: '',
     category: 'automation' as Product['category'],
     tags: '',
-    image: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80',
+    image: '',
     videoUrl: '',
     complexity: 'medium' as 'beginner' | 'medium' | 'advanced',
     integrations: [] as string[],
@@ -33,7 +37,8 @@ export function UploadPage() {
     consultationRate: '',
     status: 'pending',
   });
-
+  console.log("formData", formData.image);
+  
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -44,32 +49,68 @@ export function UploadPage() {
     }
   };
 
+  const uploadImage = async (file: File): Promise<string | null> => {
+    const dotIndex = file.name.lastIndexOf('.');
+    const fileName = `files/${user?.id}/${file.name.substring(0, dotIndex)}${Date.now()}${file.name.substring(dotIndex)}`;
+    console.log("fileName", fileName);
+  
+    const { error } = await supabase.storage
+      .from('solutions-images')
+      .upload(fileName, file);
+  
+    if (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
+  
+    const { data: publicURL, error: urlError } = await supabase.storage
+      .from('solutions-images')
+      .getPublicUrl(fileName);
+  
+    if (urlError) {
+      console.error('Error getting public URL:', urlError);
+      return null;
+    }
+  
+    return publicURL.publicUrl;
+  };
+  
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
     
     const droppedFiles = Array.from(e.dataTransfer.files);
-    setFiles(prev => [...prev, ...droppedFiles]);
+    droppedFiles.forEach(async (file) => {
+      const uploadImages = await uploadImage(file);
+      if (uploadImages) {
+        setFiles(prev => [...prev, file]);
+        setFormData(prev => ({...prev,image: uploadImages}));
+      }
+    });
   };
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const selectedFiles = Array.from(e.target.files);
-      setFiles(prev => [...prev, ...selectedFiles]);
+      const uploadImages = await uploadImage(e.target.files[0]);
+      if (uploadImages) {
+        setFiles(prev => [...prev, e.target.files[0]]);
+        setFormData(prev => ({...prev,image: uploadImages}));
+      }
     }
   };
 
   const removeFile = (index: number) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
-
+  console.log("faq", formData.faq);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     console.log("handle Submit function called", formData);
     const priceValue = formData.price.trim() === "" ? null : Number(formData.price);
     const consultationRateValue = formData.consultationRate.trim() === "" ? null : Number(formData.consultationRate);
-  
     e.preventDefault();
+
     const { error } = await supabase
     .from('solutions')
     .insert([
@@ -78,15 +119,15 @@ export function UploadPage() {
         description: formData.description,
         price: priceValue,
         category: formData.category,
-        image: formData.image,
         tags: formData.tags.split(',').map(tag => tag.trim()),
         complexity: formData.complexity,
         integrations: formData.integrations,
         faq: formData.faq,
-        creatorBio: formData.creatorBio,
         consultationAvailable: formData.consultationAvailable,
         consultationRate: consultationRateValue,
-        status: formData.status
+        status: formData.status,
+        creator: {creator_name: user?.name, creator_id: user.id},
+        image: formData.image,
       }
     ])
 
@@ -220,7 +261,7 @@ export function UploadPage() {
     "Automate.io",
     "Other"
   ];
-
+  
   return (
     <div className="min-h-screen pt-20 px-4 sm:px-6 lg:px-8 bg-white relative">
       <div className="max-w-3xl mx-auto relative">

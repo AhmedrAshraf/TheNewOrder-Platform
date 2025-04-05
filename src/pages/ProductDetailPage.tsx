@@ -9,17 +9,15 @@ import { loadStripe } from '@stripe/stripe-js';
 import { ChatModal } from '../components/ChatModal';
 import type { Product, AuthState, ConsultationOption } from '../types';
 import {useAuth} from "../context/AuthContext"
-interface ProductDetailPageProps {
-  products: Product[];
-  auth?: AuthState;
-}
+import { supabase } from '../lib/supabase';
+import { AuthModal } from '../components/AuthModal';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
-
-export function ProductDetailPage({ products, auth }: ProductDetailPageProps) {
+export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  console.log("🚀 ~ ProductDetailPage ~ products:", products)
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
@@ -27,80 +25,59 @@ export function ProductDetailPage({ products, auth }: ProductDetailPageProps) {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [hasPulsed, setHasPulsed] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
+  const [faqItems, setFaqItems] = useState([])
+  const [showAuthModal ,setShowAuthModal] = useState(false)
   const {user} = useAuth()
-  console.log("🚀 ~ ProductDetailPage ~ user:", user)
-  console.log("auth", auth);
   
   useEffect(() => {
-    const foundProduct = products.find(p => p.id === id);
-    if (foundProduct) {
-      setProduct(foundProduct);
-      
-      const related = products
-        .filter(p => 
-          p.id !== id && 
-          (p.category === foundProduct.category || 
-           p.tags.some(tag => foundProduct.tags.includes(tag)))
-        )
-        .slice(0, 3);
-      
-      setRelatedProducts(related);
-    } else {
-      navigate('/marketplace');
-    }
-  }, [id, products, navigate]);
+    const fetchProduct = async () => {
+      const { data, error } = await supabase
+        .from('solutions')
+        .select('*')
+        .eq('id', id)
+        .single();
+  
+      if (error) {
+        console.error("Error fetching product:", error);
+        setError('Failed to load product');
+        return;
+      }
+      setProduct(data);
+      setFaqItems(data?.faq || []);
+    };
+  
+    fetchProduct();
+  }, [id]);
 
   const handlePurchase = async () => {
-    if (!product) return;
-    
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const stripe = await stripePromise;
-      if (!stripe) {
-        throw new Error('Could not initialize Stripe. Please check your API key.');
-      }
-
-      const response = await fetch('/.netlify/functions/create-checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          price: product.price,
-          title: product.title,
-          description: product.description,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      if (!data.url) {
-        throw new Error('No checkout URL received');
-      }
-
-      window.location.href = data.url;
-    } catch (err) {
-      console.error('Checkout Error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to initiate checkout');
-    } finally {
-      setIsLoading(false);
+    // payment
+    if(!user){
+      setShowAuthModal(true)
+      return;
+    }else{
+      console.log("working");
     }
   };
 
-  const handlePulse = () => {
-    if (!auth) {
+  const handlePulse = async() => {
+    if (!user) {
       navigate('/login');
       return;
     }
 
     if (product && !hasPulsed) {
+      // Update the product's pulse count in the database
+      const { error } = await supabase
+        .from('solutions')
+        .update({ pulses: product.pulses + 1 })
+        .eq('id', product.id);
+      if (error) {
+        console.error("Error updating pulse count:", error);
+        setError('Failed to update pulse count');
+        return;
+      }
+
+      // Update the local state
       setProduct({
         ...product,
         pulses: product.pulses + 1
@@ -114,7 +91,7 @@ export function ProductDetailPage({ products, auth }: ProductDetailPageProps) {
   };
 
   const handleBookConsultation = () => {
-    if (!auth) {
+    if (!user) {
       navigate('/login');
       return;
     }
@@ -132,30 +109,6 @@ export function ProductDetailPage({ products, auth }: ProductDetailPageProps) {
       </div>
     );
   }
-
-  const faqItems = [
-    {
-      question: "What are the system requirements?",
-      answer: "This tool runs in any modern web browser. For optimal performance, we recommend Chrome, Firefox, or Edge with at least 8GB of RAM."
-    },
-    {
-      question: "How do I install and set up the tool?",
-      answer: "After purchase, you'll receive access to our installation guide. The setup process is straightforward and typically takes less than 5 minutes."
-    },
-    {
-      question: "Is there a free trial available?",
-      answer: "We don't offer a free trial for this specific product, but we do have a money-back guarantee if you're not satisfied with your purchase."
-    },
-    {
-      question: "Do you offer technical support?",
-      answer: "Yes, all purchases include 6 months of technical support via email and our support portal. Extended support plans are available for purchase."
-    },
-    {
-      question: "Can I use this tool for commercial projects?",
-      answer: "Yes, your purchase includes a commercial license. You can use this tool for both personal and commercial projects without additional fees."
-    }
-  ];
-
   const consultationOptions: ConsultationOption[] = [
     {
       id: "setup",
@@ -175,7 +128,7 @@ export function ProductDetailPage({ products, auth }: ProductDetailPageProps) {
   ];
 
   return (
-    <div className="min-h-screen pt-20 px-4 sm:px-6 lg:px-8 bg-white">
+    <div className="min-h-screen py-20 px-4 sm:px-6 lg:px-8 bg-white">
       <div className="max-w-7xl mx-auto">
         <button 
           onClick={() => navigate(-1)}
@@ -241,15 +194,15 @@ export function ProductDetailPage({ products, auth }: ProductDetailPageProps) {
                   <div className="flex items-center gap-3">
                     <button 
                       onClick={handlePulse}
-                      disabled={!auth || hasPulsed}
+                      disabled={!user || hasPulsed}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                         hasPulsed 
                           ? 'bg-secondary-100 text-secondary-700 border border-secondary-200' 
-                          : auth 
+                          : user 
                             ? 'bg-surface-100 hover:bg-surface-200 text-surface-900 border border-surface-200' 
                             : 'bg-surface-100 text-surface-400 cursor-not-allowed'
                       }`}
-                      title={!auth ? "Login to give a pulse" : hasPulsed ? "Already pulsed" : "Give a pulse"}
+                      title={!user ? "Login to give a pulse" : hasPulsed ? "Already pulsed" : "Give a pulse"}
                     >
                       <Zap className={`h-5 w-5 ${hasPulsed ? 'text-secondary-500' : ''}`} />
                       <span>{hasPulsed ? "Pulsed!" : "Pulse"}</span>
@@ -263,7 +216,7 @@ export function ProductDetailPage({ products, auth }: ProductDetailPageProps) {
                 <div className="flex flex-wrap items-center gap-4 mb-6">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-surface-400" />
-                    <span className="text-surface-600">{product.creator}</span>
+                    <span className="text-surface-600">{product.creator?.creator_name}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Tag className="h-4 w-4 text-surface-400" />
@@ -584,11 +537,11 @@ export function ProductDetailPage({ products, auth }: ProductDetailPageProps) {
               <div className="flex items-center gap-3 mb-3">
                 <div className="bg-secondary-500 rounded-full w-12 h-12 flex items-center justify-center">
                   <span className="text-white font-semibold">
-                    {product.creator.charAt(0).toUpperCase()}
+                    {product.creator?.creator_name.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div>
-                  <p className="font-medium text-surface-900">{product.creator}</p>
+                  <p className="font-medium text-surface-900">{product.creator?.creator_name}</p>
                   <p className="text-sm text-surface-500">AI Developer & Consultant</p>
                 </div>
               </div>
@@ -669,13 +622,19 @@ export function ProductDetailPage({ products, auth }: ProductDetailPageProps) {
           </div>
         )}
       </div>
+      {showAuthModal && (
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={() => {setShowAuthModal(false)}}
+            />
+      )}
 
       {showChatModal && (
         <ChatModal 
           isOpen={showChatModal}
           onClose={() => setShowChatModal(false)}
           product={product}
-          user={auth?.user}
+          user={user}
           consultationOptions={consultationOptions}
         />
       )}

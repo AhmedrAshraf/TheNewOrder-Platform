@@ -1,35 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Search, Plus, X, User, AlertCircle } from 'lucide-react';
+import { Shield, Search, Plus, X, User, AlertCircle, LogOut, UserPlus } from 'lucide-react';
 import { AdminNav } from '../components/AdminNav';
 import type { AuthState } from '../types';
 import { useAuth } from "../context/AuthContext";
-
+import { supabase } from '../lib/supabase';
 
 // Sample registered users for demonstration
-const REGISTERED_USERS = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', role: 'user' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', role: 'user' },
-  { id: '3', name: 'Bob Wilson', email: 'bob@example.com', role: 'user' },
-  { id: '4', name: 'Alice Brown', email: 'alice@example.com', role: 'user' }
-];
 
 interface Creator {
   id?: string;
-  firstName: string;
-  lastName: string;
   username: string;
   bio: string;
   isUnclaimed: boolean;
 }
 
 export function AdminAddProductPage() {
-    const { user } = useAuth();
-  
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreatorSearch, setShowCreatorSearch] = useState(false);
   const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
+  const [registeredUser, setRegisteredUser] = useState<any[]>([])
+  const [files, setFiles] = useState({})
+  
   const [newCreator, setNewCreator] = useState<Creator>({
     firstName: '',
     lastName: '',
@@ -37,6 +31,7 @@ export function AdminAddProductPage() {
     bio: '',
     isUnclaimed: true
   });
+
   const [showNewCreatorForm, setShowNewCreatorForm] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -54,8 +49,24 @@ export function AdminAddProductPage() {
     thumbnail: null as File | null,
     mainImage: null as File | null,
     video: null as File | null,
-    files: [] as File[]
+    files: [] as File[],
+    status: 'approved',
   });
+
+  useEffect(()=>{
+    const fetchUser = async () => {
+      const { data, error } = await supabase
+      .from('users')
+      .select()
+
+      if(error){
+        console.log("Error", error);
+        return []
+      }
+      setRegisteredUser(data)      
+    }
+    fetchUser()
+  }, [])
 
   // Add new state for FAQ
   const [newFaqQuestion, setNewFaqQuestion] = useState('');
@@ -64,58 +75,135 @@ export function AdminAddProductPage() {
   // Add new state for requirements and integrations
   const [newRequirement, setNewRequirement] = useState('');
   const [newIntegration, setNewIntegration] = useState('');
+  
 
-  // Add file input refs
-  const thumbnailInputRef = useRef<HTMLInputElement>(null);
-  const mainImageInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
-  const filesInputRef = useRef<HTMLInputElement>(null);
-
-  // Add URL cleanup on unmount
-  useEffect(() => {
-    return () => {
-      // Cleanup object URLs when component unmounts
-      if (formData.thumbnail) URL.revokeObjectURL(URL.createObjectURL(formData.thumbnail));
-      if (formData.mainImage) URL.revokeObjectURL(URL.createObjectURL(formData.mainImage));
-      if (formData.video) URL.revokeObjectURL(URL.createObjectURL(formData.video));
-      formData.files.forEach(file => URL.revokeObjectURL(URL.createObjectURL(file)));
-    };
-  }, [formData]);
-
-  // Add helper function for file preview URLs
-  const getFilePreviewUrl = (file: File | null) => {
-    if (!file) return '';
-    return URL.createObjectURL(file);
-  };
 
   // Handle file selection
-  const handleFileSelect = (type: 'thumbnail' | 'mainImage' | 'video' | 'files', files: FileList | null) => {
+  const handleFileSelect = async (type: 'thumbnail' | 'mainImage' | 'video' | 'files', files: FileList | null) => {
     if (!files) return;
-
+    console.log("type", type, "files", files );
+    
     switch (type) {
-      case 'thumbnail':
-      case 'mainImage':
-      case 'video':
-        setFormData(prev => ({ ...prev, [type]: files[0] }));
-        break;
-      case 'files':
-        setFormData(prev => ({ ...prev, files: [...prev.files, ...Array.from(files)] }));
-        break;
-    }
-  };
+      case 'thumbnail':{
+        const dotIndex = files[0].name.lastIndexOf('.');
+        const fileName = `thumbnails/${user?.id}/${files[0].name.substring(0, dotIndex)}${new Date().getMilliseconds()}${files[0].name.substring(dotIndex)}`;
+        console.log("fileName", fileName);
+        
+        const { data, error } = await supabase
+        .storage
+        .from('solutions-images')
+        .upload(fileName, files[0], {
+          cacheControl: '3600',
+          upsert: false
+        })
+        if(error){
+          console.error("error while uploading image", error);
+          return
+        }
+        const { data:urlData } = supabase
+        .storage
+        .from('solutions-images')
+        .getPublicUrl(fileName)
 
-  // Handle file removal
-  const handleFileRemove = (type: 'thumbnail' | 'mainImage' | 'video' | 'files', index?: number) => {
-    if (type === 'files' && typeof index === 'number') {
-      setFormData(prev => ({
-        ...prev,
-        files: prev.files.filter((_, i) => i !== index)
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, [type]: null }));
-    }
-  };
+        setFormData(prev => ({ ...prev, thumbnail: urlData.publicUrl }));
+        break;
+      }
+      case 'mainImage':{
+        const dotIndex = files[0].name.lastIndexOf('.');
+        const fileName = `mainImage/${user?.id}/${files[0].name.substring(0, dotIndex)}${new Date().getMilliseconds()}${files[0].name.substring(dotIndex)}`;
 
+        const { data, error } = await supabase
+        .storage
+        .from('solutions-images')
+        .upload(fileName, files[0], {
+          cacheControl: '3600',
+          upsert: false
+        })
+        if(error){
+          console.error("error while uploading image", error);
+          return
+        }
+        const { data:urlData } = supabase
+        .storage
+        .from('solutions-images')
+        .getPublicUrl(fileName)
+
+        setFormData(prev => ({ ...prev, mainImage: urlData.publicUrl }));
+        break;
+      }
+      case 'video':{
+        const dotIndex = files[0].name.lastIndexOf('.');
+        const fileName = `solution-videos/${user?.id}/${files[0].name.substring(0, dotIndex)}${new Date().getMilliseconds()}${files[0].name.substring(dotIndex)}`;
+
+        const { data, error } = await supabase
+        .storage
+        .from('solutions-images')
+        .upload(fileName, files[0], {
+          cacheControl: '3600',
+          upsert: false
+        })
+        if(error){
+          console.error("error while uploading image", error);
+          return
+        }
+        const { data:urlData } = supabase
+        .storage
+        .from('solutions-images')
+        .getPublicUrl(fileName)
+
+        setFormData(prev => ({ ...prev, video: urlData.publicUrl }));
+        break;
+      }
+      case 'files': {
+        const originalName = files[0].name;
+        const dotIndex = originalName.lastIndexOf('.');
+        const baseName = originalName.substring(0, dotIndex).replace(/\s+/g, '_');
+        const extension = originalName.substring(dotIndex);
+        const fileKey = `files/${user?.id}/${baseName}${new Date().getMilliseconds()}${extension}`;
+        
+        console.log("fileKey", fileKey);
+        
+        const { data, error } = await supabase
+          .storage
+          .from('solutions-images')
+          .upload(fileKey, files[0], {
+            cacheControl: '3600',
+            upsert: false
+          });
+        if (error) {
+          console.error("Error while uploading file", error);
+          return;
+        }
+        
+        const { data: urlData } = supabase
+          .storage
+          .from('solutions-images')
+          .getPublicUrl(fileKey);
+        
+        // Store both the key and the URL
+        setFormData(prev => ({
+          ...prev,
+          files: [...prev.files, { key: fileKey, url: urlData.publicUrl }]
+        }));
+        break;
+      }}      
+  };
+  
+  const handleFileRemove = async (fileKey: string, index?: number) => {
+
+    const { data, error } = await supabase
+      .storage
+      .from('solutions-images')
+      .remove([fileKey]);
+    if (error) {
+      console.error("Error deleting file", error);
+      return false;
+    }
+    console.log("File deleted", data);
+    return true;
+  };
+  
+  
   // Handle adding FAQ
   const handleAddFaq = () => {
     if (!newFaqQuestion.trim() || !newFaqAnswer.trim()) return;
@@ -156,12 +244,6 @@ export function AdminAddProductPage() {
     setNewIntegration('');
   };
 
-  // Helper function to safely create object URLs
-  const getObjectUrl = (file: File | null): string => {
-    if (!file) return '';
-    return URL.createObjectURL(file);
-  };
-
   // Redirect if not admin
   if (!user || user.role !== 'admin') {
     return (
@@ -182,26 +264,54 @@ export function AdminAddProductPage() {
       </div>
     );
   }
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async(e: React.FormEvent) => {
     e.preventDefault();
     // Handle form submission
-    console.log('Form submitted:', { 
-      ...formData, 
-      creator: selectedCreator || newCreator
-    });
+    console.log('Form submitted:', { ...formData, creator: selectedCreator || newCreator });
+    const priceValue = formData.price.trim() !== '' ? parseFloat(formData.price) : null;
+    const consultationRateValue = formData.consultationRate.trim() !== '' ? parseFloat(formData.consultationRate) : null;
+
+    const { error } = await supabase
+      .from('solutions')
+      .insert([
+        { 
+          title: formData.title,
+          description: formData.description,
+          price: priceValue,
+          category: formData.category,
+          image: formData.image,
+          tags: formData.tags.split(',').map(tag => tag.trim()),
+          complexity: formData.complexity,
+          integrations: formData.integrations,
+          faq: formData.faq,
+          consultationAvailable: formData.consultationAvailable,
+          consultationRate: consultationRateValue,
+          status: formData.status,
+          // creator: {creator_name: selectedCreator?.username, creator_id: selectedCreator.id, creatorBio: selectedCreator?.bio},
+          creator: selectedCreator ? { creator_name: selectedCreator.username, creator_id: selectedCreator.id, creatorBio: selectedCreator.bio}: null,
+          thumbnail: formData.thumbnail,
+          video: formData.video,
+          files: formData.files,
+        }
+      ])
+  
+      if(error){
+        console.error('error', error);
+      }else{
+      console.log("✅ solutions added");``
+      }
+      // navigate('/marketplace');
   };
 
-  const filteredUsers = REGISTERED_USERS.filter(user =>
+  const filteredUsers = registeredUser.filter(user =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleSelectUser = (user: typeof REGISTERED_USERS[0]) => {
-    const [firstName, lastName] = user.name.split(' ');
+  console.log("user name handleSelectUser", user);
+  
     setSelectedCreator({
       id: user.id,
-      firstName,
-      lastName,
       username: user.email.split('@')[0],
       bio: '',
       isUnclaimed: false
@@ -350,19 +460,15 @@ export function AdminAddProductPage() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => {
-                          setSelectedCreator(null);
-                          setShowCreatorSearch(false);
-                          setShowNewCreatorForm(false);
-                        }}
+                        onClick={() => { setSelectedCreator(null); setShowCreatorSearch(false); setShowNewCreatorForm(false);}}
                         className="text-surface-400 hover:text-surface-600"
                       >
                         <X className="h-5 w-5" />
                       </button>
                     </div>
                     <textarea
-                      value={selectedCreator.bio}
-                      onChange={(e) => setSelectedCreator({ ...selectedCreator, bio: e.target.value })}
+                    value={selectedCreator.bio}
+                    onChange={(e) => setSelectedCreator({ ...selectedCreator, bio: e.target.value })}
                       placeholder="Enter creator bio..."
                       className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 h-32"
                     />
@@ -454,6 +560,7 @@ export function AdminAddProductPage() {
                     <input
                       type="text"
                       name="title"
+                      required
                       value={formData.title}
                       onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                       className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
@@ -464,6 +571,7 @@ export function AdminAddProductPage() {
                   <div>
                     <label className="block text-sm font-medium mb-2">Description</label>
                     <textarea
+                    required
                       name="description"
                       value={formData.description}
                       onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
@@ -476,6 +584,7 @@ export function AdminAddProductPage() {
                     <div>
                       <label className="block text-sm font-medium mb-2">Price ($)</label>
                       <input
+                      required
                         type="number"
                         name="price"
                         value={formData.price}
@@ -488,6 +597,7 @@ export function AdminAddProductPage() {
                     <div>
                       <label className="block text-sm font-medium mb-2">Category</label>
                       <select
+                      required
                         name="category"
                         value={formData.category}
                         onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as typeof formData.category }))}
@@ -503,6 +613,7 @@ export function AdminAddProductPage() {
                   <div>
                     <label className="block text-sm font-medium mb-2">Tags</label>
                     <input
+                    required
                       type="text"
                       name="tags"
                       value={formData.tags}
@@ -676,31 +787,28 @@ export function AdminAddProductPage() {
                     <label className="block text-sm font-medium mb-2">Thumbnail Image</label>
                     <div className="flex items-center gap-4">
                       {formData.thumbnail ? (
+                        console.log("formData.thumbnail", formData.thumbnail),
+                        
                         <div className="relative w-24 h-24">
-                          <img
-                            src={getFilePreviewUrl(formData.thumbnail)}
-                            alt="Thumbnail"
-                            className="w-full h-full object-cover rounded-lg"
-                          />
+                          <img src={formData?.thumbnail} lt="Thumbnail" className="w-full h-full object-cover rounded-lg"/>
                           <button
                             type="button"
-                            onClick={() => handleFileRemove('thumbnail')}
+                            onClick={() => handleFileRemove(formData.thumbnail)}
                             className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full"
                           >
                             <X className="h-4 w-4" />
                           </button>
                         </div>
                       ) : (
-                        <button
-                          type="button"
-                          onClick={() => thumbnailInputRef.current?.click()}
-                          className="w-24 h-24 bg-surface-50 border-2 border-dashed border-surface-200 rounded-lg flex items-center justify-center hover:border-secondary-500 hover:bg-surface-100 transition-colors"
+                        <label
+                         htmlFor="thumbnailInput"
+                         className="w-24 h-24 bg-surface-50 border-2 border-dashed border-surface-200 rounded-lg flex items-center justify-center hover:border-secondary-500 hover:bg-surface-100 transition-colors cursor-pointer"
                         >
                           <Plus className="h-6 w-6 text-surface-400" />
-                        </button>
+                        </label>
                       )}
                       <input
-                        ref={thumbnailInputRef}
+                        id="thumbnailInput"
                         type="file"
                         accept="image/*"
                         onChange={(e) => handleFileSelect('thumbnail', e.target.files)}
@@ -714,31 +822,29 @@ export function AdminAddProductPage() {
                     <label className="block text-sm font-medium mb-2">Main Image</label>
                     <div className="flex items-center gap-4">
                       {formData.mainImage ? (
-                        <div className="relative w-full aspect-video">
+                        <div className="relative w-full max-h-56 overflow-y-scroll">
                           <img
-                            src={getFilePreviewUrl(formData.mainImage)}
+                            src={formData?.mainImage}
                             alt="Main"
                             className="w-full h-full object-cover rounded-lg"
                           />
                           <button
                             type="button"
-                            onClick={() => handleFileRemove('mainImage')}
-                            className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full"
+                            onClick={() => handleFileRemove(formData.mainImage)}
+                            className="absolute -top-2 -right-2 p-1 text-white rounded-full"
                           >
                             <X className="h-4 w-4" />
                           </button>
                         </div>
                       ) : (
-                        <button
-                          type="button"
-                          onClick={() => mainImageInputRef.current?.click()}
-                          className="w-full aspect-video bg-surface-50 border-2 border-dashed border-surface-200 rounded-lg flex items-center justify-center hover:border-secondary-500 hover:bg-surface-100 transition-colors"
+                        <label htmlFor='mainImageInput'
+                          className="w-full p-3 bg-surface-50 border-2 border-dashed border-surface-200 rounded-lg flex items-center justify-center hover:border-secondary-500 hover:bg-surface-100 transition-colors cursor-pointer"
                         >
                           <Plus className="h-6 w-6 text-surface-400" />
-                        </button>
+                        </label>
                       )}
                       <input
-                        ref={mainImageInputRef}
+                       id='mainImageInput'
                         type="file"
                         accept="image/*"
                         onChange={(e) => handleFileSelect('mainImage', e.target.files)}
@@ -752,32 +858,30 @@ export function AdminAddProductPage() {
                     <label className="block text-sm font-medium mb-2">Video</label>
                     <div className="flex items-center gap-4">
                       {formData.video ? (
-                        <div className="relative w-full aspect-video">
+                        <div className="relative w-full">
                           <video
-                            src={getFilePreviewUrl(formData.video)}
+                            src={formData.video}
                             controls
                             className="w-full h-full object-cover rounded-lg"
                           />
                           <button
                             type="button"
-                            onClick={() => handleFileRemove('video')}
-                            className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full"
+                            onClick={() => {handleFileRemove(formData.video);  setFormData(prev => ({ ...prev, thumbnail: null}));}}
+                            className="absolute p-3 -top-2 -right-2 text-white rounded-full"
                           >
                             <X className="h-4 w-4" />
                           </button>
                         </div>
                       ) : (
-                        <button
-                          type="button"
-                          onClick={() => videoInputRef.current?.click()}
-                          className="w-full aspect-video bg-surface-50 border-2 border-dashed border-surface-200 rounded-lg flex items-center justify-center hover:border-secondary-500 hover:bg-surface-100 transition-colors"
+                        <label htmlFor='videoInput' 
+                          className="w-full p-3 bg-surface-50 border-2 border-dashed border-surface-200 rounded-lg flex items-center justify-center hover:border-secondary-500 hover:bg-surface-100 transition-colors cursor-pointer"
                         >
                           <Plus className="h-6 w-6 text-surface-400" />
-                        </button>
+                        </label>
                       )}
                       <input
-                        ref={videoInputRef}
                         type="file"
+                        id='videoInput'
                         accept="video/*"
                         onChange={(e) => handleFileSelect('video', e.target.files)}
                         className="hidden"
@@ -787,17 +891,13 @@ export function AdminAddProductPage() {
 
                   {/* Additional Files */}
                   <div>
-                    <label className="block text-sm font-medium mb-2">Additional Files</label>
-                    <button
-                      type="button"
-                      onClick={() => filesInputRef.current?.click()}
-                      className="w-full p-4 bg-surface-50 border-2 border-dashed border-surface-200 rounded-lg flex items-center justify-center hover:border-secondary-500 hover:bg-surface-100 transition-colors"
-                    >
+                    <label>Additional Files</label>
+                    <label htmlFor='filesInput' className="w-full p-3 bg-surface-50 border-2 border-dashed border-surface-200 rounded-lg flex items-center justify-center hover:border-secondary-500 hover:bg-surface-100 transition-colors cursor-pointer">
                       <Plus className="h-6 w-6 text-surface-400" />
                       <span className="ml-2">Add Files</span>
-                    </button>
+                    </label>
                     <input
-                      ref={filesInputRef}
+                      id='filesInput'
                       type="file"
                       multiple
                       onChange={(e) => handleFileSelect('files', e.target.files)}
@@ -805,12 +905,20 @@ export function AdminAddProductPage() {
                     />
                     {formData.files.length > 0 && (
                       <div className="mt-4 space-y-2">
-                        {formData.files.map((file, index) => (
+                        {formData.files.map((fileObj, index) => (
                           <div key={index} className="flex items-center justify-between p-2 bg-surface-50 rounded-lg">
-                            <span className="truncate">{file.name}</span>
+                            <img src={fileObj.url} alt={`image ${index + 1}`} className="w-20 h-20 object-cover" />
                             <button
                               type="button"
-                              onClick={() => handleFileRemove('files', index)}
+                              onClick={async () => {
+                                const deleted = await handleFileRemove(fileObj.key, index);
+                                if (deleted) {
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    files: prev.files.filter((_, i) => i !== index)
+                                  }));
+                                }
+                              }}
                               className="text-surface-400 hover:text-surface-600"
                             >
                               <X className="h-4 w-4" />

@@ -1,22 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Zap, Shield, Layers, Rocket, Code, Bot, Cpu, Lock, Clock, Award, Users, Search, X, TrendingUp } from 'lucide-react';
 import { ProductCard } from './ProductCard';
-import { QuantumBackground } from './QuantumBackground';
 import { useNavigate } from 'react-router-dom';
-import type { Product } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface HeroProps {
   onUploadClick: () => void;
   onExploreClick: () => void;
-  products: Product[];
 }
 
-export function Hero({ onUploadClick, onExploreClick, products }: HeroProps) {
+export function Hero({ onUploadClick, onExploreClick,  }: HeroProps) {
   const [filterOption, setFilterOption] = useState<'latest' | 'popular' | 'trending'>('popular');
   const [searchQuery, setSearchQuery] = useState('');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [typedPlaceholder, setTypedPlaceholder] = useState('');
   const [isTyping, setIsTyping] = useState(true);
+  const [products, setProducts] = useState([])
   const navigate = useNavigate();
 
   // Shorter, focused search suggestions
@@ -29,6 +28,24 @@ export function Hero({ onUploadClick, onExploreClick, products }: HeroProps) {
     "Create personalized videos...",
     "Monitor customer support chats..."
   ];
+
+useEffect(()=>{
+ const fetchProduct = async () => {
+      const { data, error } = await supabase
+        .from('solutions')
+        .select('*')
+        .eq('status', 'approved')
+        .limit(4)
+  
+      if (error) {
+        console.error("Error fetching product:", error);
+        return;
+      }
+      setProducts(data);
+  };
+  
+fetchProduct();
+}, [])
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -67,9 +84,6 @@ export function Hero({ onUploadClick, onExploreClick, products }: HeroProps) {
   return (
     <>
       <div className="relative overflow-hidden bg-white mt-16 md:mt-20">
-        <div className="absolute inset-0 h-[92%]">
-          <QuantumBackground intensity="high" overlay={true} />
-        </div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-28">
           <div className="text-center">
@@ -152,7 +166,7 @@ export function Hero({ onUploadClick, onExploreClick, products }: HeroProps) {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {products.slice(0, 4).map((product) => (
+            {products.map((product) => (
               <ProductCard 
                 key={product.id} 
                 product={product} 

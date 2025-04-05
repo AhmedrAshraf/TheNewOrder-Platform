@@ -149,14 +149,13 @@ function AppContent() {
               <Hero 
                 onUploadClick={handleUploadClick} 
                 onExploreClick={handleExploreClick}
-                products={products}
               />
             </>
           } />
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/dashboard" element={<DashboardPage products={products} />} />
           <Route path="/marketplace" element={<MarketplacePage />} />
-          <Route path="/product/:id" element={<ProductDetailPage products={products}/>} />
+          <Route path="/product/:id" element={<ProductDetailPage />} />
           <Route path="/admin" element={<AdminPage/>} />
           <Route path="/admin/curation" element={<AdminCurationPage/>} />
           <Route path="/admin/users" element={<AdminUsersPage/>} />

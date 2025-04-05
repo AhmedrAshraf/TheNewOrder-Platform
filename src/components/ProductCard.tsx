@@ -100,9 +100,9 @@ export function ProductCard({ product, onCardClick }: ProductCardProps) {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1">
               <Zap className="h-4 w-4 text-white" />
-              <span className="text-sm font-medium text-white">{formatPulses(product.pulses)}</span>
+              <span className="text-sm font-medium text-white">{formatPulses(product?.pulses)}</span>
             </div>
-            <span className="text-sm text-white/80">by {product.creator}</span>
+            <span className="text-sm text-white/80">by {product.creator?.creator_name}</span>
           </div>
           
           <div className="flex items-center justify-between">

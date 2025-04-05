@@ -26,7 +26,7 @@ export function AdminPage() {
   const [latestUserTime, setLatestUserTime] = useState(null);
   const [latestApprovalTime, setLatestApprovalTime] = useState(null)
   const [newOrderCompleted, setNewOrderCompleted] = useState(null)
-
+  
   const fetchUser = async () => {
     const { data, error } = await supabase
       .from('users')
@@ -108,17 +108,19 @@ export function AdminPage() {
       const { data, error } = await supabase
         .from("solutions") 
         .select("approved_at")
-        .order("approved_at", { ascending: false }) 
-        .limit(1);
+        .order("approved_at", { ascending: true }) 
+        .limit(1)
+        .maybeSingle();
 
-        console.log("User Data:", data);
+        console.log("approved data", data);
+      
       if (error) {
         console.error("Error fetching latest approved solution:", error);
         return;
       }
 
-      if (data.length > 0 && data[0].created_at) {
-        const latestTime = new Date(data[0].created_at);
+      if (data && data.approved_at) {
+        const latestTime = new Date(data.approved_at);
         if (!isNaN(latestTime.getTime())) { 
           setLatestApprovalTime(formatDistanceToNow(latestTime, { addSuffix: true }));
         } else {

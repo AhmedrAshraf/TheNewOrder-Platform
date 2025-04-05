@@ -1,118 +1,8 @@
-import React, { useState, useRef } from 'react';
-import { Grid3X3, ListFilter, TrendingUp, Zap, Search, ChevronDown, X, Check, ChevronRight } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Grid3X3, ListFilter, TrendingUp, Zap, Search, ChevronDown, X, Check, ChevronRight, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { Product } from '../types';
-
-const MARKETPLACE_PRODUCTS: Product[] = [
-  {
-    id: '4',
-    title: 'Pinterest Automation Suite',
-    description: 'Automate your Pinterest marketing with AI-powered pin creation, scheduling, and analytics',
-    price: 499,
-    image: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&q=80',
-    creator: 'Social AI Labs',
-    category: 'automation',
-    tags: ['pinterest', 'social-media', 'marketing'],
-    priceId: 'price_1P3GVJGk9bLuwZYPeXAtXyoEgX4zJqD8MA1jU04CGJ5DTGyLU9QVOp7zt0SLqreCTJ8PRGP194TxehsLagPYKVwf00wRA7hvqq',
-    pulses: 156
-  },
-  {
-    id: '5',
-    title: 'Social Content Generator',
-    description: 'AI-powered content creation for all major social media platforms',
-    price: 299,
-    image: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?auto=format&fit=crop&q=80',
-    creator: 'Content AI',
-    category: 'automation',
-    tags: ['content', 'social-media', 'ai'],
-    priceId: 'price_1P3GVJGk9bLuwZYPeXAtXyoEgX4zJqD8MA1jU04CGJ5DTGyLU9QVOp7zt0SLqreCTJ8PRGP194TxehsLagPYKVwf00wRA7hvqq',
-    pulses: 243
-  },
-  {
-    id: '6',
-    title: 'SEO Blog Agent',
-    description: 'Automated blog post generation optimized for search engines',
-    price: 599,
-    image: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&q=80',
-    creator: 'SEO Masters',
-    category: 'automation',
-    tags: ['seo', 'blog', 'content'],
-    priceId: 'price_1P3GVJGk9bLuwZYPeXAtXyoEgX4zJqD8MA1jU04CGJ5DTGyLU9QVOp7zt0SLqreCTJ8PRGP194TxehsLagPYKVwf00wRA7hvqq',
-    pulses: 187
-  },
-  {
-    id: '7',
-    title: 'LinkedIn Engagement Bot',
-    description: 'Automate your LinkedIn presence with AI-powered posts and engagement',
-    price: 399,
-    image: 'https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?auto=format&fit=crop&q=80',
-    creator: 'B2B AI Solutions',
-    category: 'automation',
-    tags: ['linkedin', 'b2b', 'networking'],
-    priceId: 'price_1P3GVJGk9bLuwZYPeXAtXyoEgX4zJqD8MA1jU04CGJ5DTGyLU9QVOp7zt0SLqreCTJ8PRGP194TxehsLagPYKVwf00wRA7hvqq',
-    pulses: 112
-  },
-  {
-    id: '8',
-    title: 'Email Marketing Assistant',
-    description: 'AI-powered email campaign creation and optimization',
-    price: 349,
-    image: 'https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?auto=format&fit=crop&q=80',
-    creator: 'Email AI',
-    category: 'automation',
-    tags: ['email', 'marketing', 'campaigns'],
-    priceId: 'price_1P3GVJGk9bLuwZYPeXAtXyoEgX4zJqD8MA1jU04CGJ5DTGyLU9QVOp7zt0SLqreCTJ8PRGP194TxehsLagPYKVwf00wRA7hvqq',
-    pulses: 98
-  },
-  {
-    id: '9',
-    title: 'Customer Support Bot',
-    description: 'Intelligent chatbot for 24/7 customer support automation',
-    price: 699,
-    image: 'https://images.unsplash.com/photo-1596524430615-b46475ddff6e?auto=format&fit=crop&q=80',
-    creator: 'Support AI',
-    category: 'automation',
-    tags: ['support', 'chatbot', 'customer-service'],
-    priceId: 'price_1P3GVJGk9bLuwZYPeXAtXyoEgX4zJqD8MA1jU04CGJ5DTGyLU9QVOp7zt0SLqreCTJ8PRGP194TxehsLagPYKVwf00wRA7hvqq',
-    pulses: 176
-  },
-  {
-    id: 'prod_RoVaIw6Z764B8B',
-    title: 'AI Document Processor',
-    description: 'Automatically process and analyze documents using advanced AI',
-    price: 299,
-    image: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&q=80',
-    creator: 'AI Labs',
-    category: 'automation',
-    tags: ['document', 'processing', 'ai'],
-    priceId: 'price_1P3GVJGk9bLuwZYPeXAtXyoEgX4zJqD8MA1jU04CGJ5DTGyLU9QVOp7zt0SLqreCTJ8PRGP194TxehsLagPYKVwf00wRA7hvqq',
-    pulses: 124
-  },
-  {
-    id: 'prod_RoVbXy7Z764C9D',
-    title: 'AI Video Generator',
-    description: 'Create professional videos from text prompts with cutting-edge AI technology',
-    price: 499,
-    image: 'https://images.unsplash.com/photo-1626544827763-d516dce335e2?auto=format&fit=crop&q=80',
-    creator: 'VideoAI',
-    category: 'workflow',
-    tags: ['video', 'generation', 'content'],
-    priceId: 'price_1P3GVJGk9bLuwZYPeXAtXyoEgX4zJqD8MA1jU04CGJ5DTGyLU9QVOp7zt0SLqreCTJ8PRGP194TxehsLagPYKVwf00wRA7hvqq',
-    pulses: 287
-  },
-  {
-    id: 'prod_RoVcZz8Z764D0E',
-    title: 'Customer Support AI',
-    description: 'Intelligent chatbot that handles customer inquiries 24/7 with natural language processing',
-    price: 199,
-    image: 'https://images.unsplash.com/photo-1596524430615-b46475ddff6e?auto=format&fit=crop&q=80',
-    creator: 'SupportTech',
-    category: 'integration',
-    tags: ['support', 'chatbot', 'customer-service'],
-    priceId: 'price_1P3GVJGk9bLuwZYPeXAtXyoEgX4zJqD8MA1jU04CGJ5DTGyLU9QVOp7zt0SLqreCTJ8PRGP194TxehsLagPYKVwf00wRA7hvqq',
-    pulses: 93
-  }
-];
+import { supabase } from '../lib/supabase';
 
 function MultiSelectDropdown({ 
   options, 
@@ -255,8 +145,29 @@ export function MarketplacePage() {
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [solutions, setSolutions] = useState([]);
   const navigate = useNavigate();
 
+  useEffect(()=>{
+    const fetchSolutions = async () => {
+      console.log("fetching solutions");
+      
+      const { data, error } = await supabase
+      .from('solutions')
+      .select()
+      .eq('status', 'approved')
+
+      if(error){
+        console.error("error while fetching solutions", error);
+        return
+      }
+      setSolutions(data);      
+      console.log("solutions" ,data);
+      
+    }
+    fetchSolutions()
+  }, [])
+  
   const categories = [
     'productivity',
     'marketing',
@@ -336,7 +247,7 @@ export function MarketplacePage() {
     return 'other';
   };
 
-  const filteredProducts = MARKETPLACE_PRODUCTS.filter(product => {
+  const filteredProducts = solutions?.filter(product => {
     const matchesSearch = searchQuery ? 
       product.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
       product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -504,6 +415,8 @@ export function MarketplacePage() {
                   : 'grid-cols-1'
               }`}>
                 {sortedProducts.map((product) => (
+                  console.log("product", product.id),
+                  
                   <div
                     key={product.id}
                     className={`bg-white rounded-xl overflow-hidden border border-surface-200 hover:border-secondary-500/50 transition-all duration-300 group cursor-pointer shadow-card hover:shadow-card-hover ${
@@ -511,7 +424,7 @@ export function MarketplacePage() {
                     }`}
                     onClick={() => navigate(`/product/${product.id}`)}
                   >
-                    <div className={`relative ${view === 'list' ? 'w-48' : 'aspect-video'}`}>
+                    <div className={`relative ${view === 'list' ? 'w-48' : 'w-full'} h-48`}>
                       <img
                         src={product.image}
                         alt={product.title}
@@ -547,7 +460,9 @@ export function MarketplacePage() {
                       <div className="mt-auto flex items-center justify-between">
                         <div>
                           <span className="text-xl font-bold text-surface-900">${product.price}</span>
-                          <p className="text-sm text-surface-600">by {product.creator}</p>
+                          {product.creator?.creator_name && (
+                          <p className="text-sm text-surface-600">by {product.creator?.creator_name}</p>
+                        )}
                         </div>
                         <button 
                           className="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-colors shadow-button hover:shadow-button-hover whitespace-nowrap"
