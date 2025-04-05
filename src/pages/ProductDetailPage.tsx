@@ -17,7 +17,6 @@ export function ProductDetailPage() {
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
-  console.log("🚀 ~ ProductDetailPage ~ products:", products)
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);

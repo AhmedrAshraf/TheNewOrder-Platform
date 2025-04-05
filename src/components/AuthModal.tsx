@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { X, Mail, Lock, User, LogIn, UserPlus } from "lucide-react";
+import { X, Mail, Lock, User, LogIn, UserPlus, MessageSquareText } from "lucide-react";
 import { QuantumBackground } from "./QuantumBackground";
 import { useClickOutside } from "../hooks/useClickOutside";
 import {useNavigate } from 'react-router-dom';
@@ -23,6 +23,8 @@ export function AuthModal({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [title, setTitle] = useState("");
+  const [bio, setBio] = useState("");
   const modalRef: any = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +36,7 @@ export function AuthModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleAuth(name, email, password, isSignUp);
+    handleAuth(name, email, password, isSignUp, bio, title);
   };  
 
   // const handleAuth = async (name:string, email: string, password: string, isSignUp: boolean) => {
@@ -103,7 +105,7 @@ export function AuthModal({
   //   };
   
 
-  const handleAuth = async (name:string, email: string, password: string, isSignUp: boolean) => {
+  const handleAuth = async (name: string, email: string, password: string, isSignUp: boolean, bio: string, title: string) => {
     try {
       setLoading(true)
       const isAdmin = email.includes('admin');
@@ -131,7 +133,9 @@ export function AuthModal({
             id: data.user.id,
             name,
             email: trimmedEmail,
-            role: isAdmin ? "admin" : "user"
+            role: isAdmin ? "admin" : "user",
+            bio: bio,
+            title: title
           }]);
   
         if (insertError) {
@@ -221,7 +225,7 @@ export function AuthModal({
             {/* Name field removed as it is not required */}
             {error && <p className="text-red-500 bg-red-50 rounded-lg p-4 text-center mt-2 text-sm">Error: {error}</p>}
             {isSignUp && (
-              <div>
+              <div className="flex items-center justify-between gap-3">
               <div>
                 <label className="block text-sm font-medium mb-2 text-surface-700">Name</label>
                 <div className="relative">
@@ -236,15 +240,21 @@ export function AuthModal({
                   />
                 </div>
               </div>
-                {/* <div className="mt-3">
-                  <label className="block text-sm font-medium mb-2 text-surface-700">Role</label>
-                  <div className="p-2 border rounded-xl">
-                      <select name="role" id="role">
-                        <option value="user">user</option>
-                        <option value="admin">admin</option>
-                      </select>
-                  </div>
-                </div> */}
+
+              <div>
+              <label className="block text-sm font-medium text-surface-700">Title</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-2.5 h-5 w-5 text-surface-400" />
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full bg-surface-50 border border-surface-200 rounded-xl py-2 px-4 pl-10 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20 placeholder-surface-400 transition-colors"
+                    placeholder="Enter your name"
+                    required
+                  />
+                </div>
+                </div>
               </div>
             )}
             <div>
@@ -282,6 +292,22 @@ export function AuthModal({
                   required
                 />
               </div>
+
+            {isSignUp && (
+              <div>
+                <label className="block text-sm font-medium mt-3 text-surface-700">Bio</label>
+                <div className="relative">
+                  <MessageSquareText className="absolute left-3 top-2.5 h-5 w-5 text-surface-400" />
+                  <textarea
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    className="w-full bg-surface-50 border border-surface-200 rounded-xl py-2 px-4 pl-10 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20 placeholder-surface-400 transition-colors"
+                    placeholder="Enter your name"
+                    required
+                  ></textarea>
+                </div>
+              </div>
+            )}
             </div>
 
             <button
