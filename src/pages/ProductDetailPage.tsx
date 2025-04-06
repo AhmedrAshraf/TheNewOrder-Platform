@@ -21,14 +21,67 @@ export function ProductDetailPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'howto' | 'faq'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'howto' | 'faq' | 'reviews'>('overview');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [hasPulsed, setHasPulsed] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   const [faqItems, setFaqItems] = useState([])
   const [showAuthModal ,setShowAuthModal] = useState(false)
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [rating, setRating] = useState<number>(0);
+  const [comment, setComment] = useState<string>('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const {user} = useAuth()
   
+  const fetchReviews = async () => {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('solution_id', id)
+      .order('created_at', { ascending: false });
+  
+    if (error) {
+      console.error("Error fetching reviews:", error);
+      return;
+    }
+    setReviews(data || []);
+  };
+  
+  const handleStarClick = (selectedRating: number) => {
+    setRating(selectedRating);
+  };
+  
+  const handleSubmitReview = async () => {
+    if (!user || !rating) return;
+    
+    setIsSubmittingReview(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .insert([{
+          solution_id: id,
+          user_id: user.id,
+          rating,
+          comment,
+          user_name: user?.name
+        }]);
+      
+      if (error) throw error;
+      console.log(data);
+      
+      await fetchReviews();
+      setComment('');
+      setRating(0);
+      
+    } catch (error) {
+      console.error("Error submitting review:", error);
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+
   useEffect(() => {
     const fetchProduct = async () => {
       const { data, error } = await supabase
@@ -42,6 +95,7 @@ export function ProductDetailPage() {
         setError('Failed to load product');
         return;
       }
+      fetchReviews();
       setProduct(data);
       setFaqItems(data?.faq || []);
     };
@@ -208,8 +262,93 @@ export function ProductDetailPage() {
                   >
                     FAQ
                   </button>
+                  <button
+                    onClick={() => setActiveTab('reviews')}
+                    className={`px-6 py-4 font-medium whitespace-nowrap ${
+                      activeTab === 'reviews' 
+                        ? 'border-b-2 border-secondary-500 text-surface-900' 
+                        : 'text-surface-600 hover:text-surface-900'
+                    }`}
+                  >
+                    Reviews
+                  </button>
                 </div>
               </div>
+
+              {activeTab === 'reviews' && (
+                <div className="space-y-4 p-4">
+                  <h2 className="text-xl font-semibold mb-4 text-surface-900">Customer Reviews</h2>
+                  
+                  {/* Review form (only for logged in users) */}
+                  {user && (
+                    <div className="bg-surface-50 p-4 rounded-lg mb-6">
+                      <h3 className="font-medium mb-3">Write a Review</h3>
+                      <div className="flex mb-3">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button 
+                            key={star}
+                            onClick={() => handleStarClick(star)}
+                            className="focus:outline-none"
+                          >
+                            <Star 
+                              className={`h-5 w-5 ${star <= rating ? 'text-yellow-400' : 'text-surface-300'}`}
+                              fill={star <= rating ? 'currentColor' : 'none'}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                      <textarea 
+                        className="w-full p-3 border border-surface-200 rounded-lg mb-3"
+                        placeholder="Share your experience with this product..."
+                        rows={3}
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                      />
+                      <button 
+                        onClick={handleSubmitReview}
+                        disabled={!rating || isSubmittingReview}
+                        className={`bg-secondary-500 text-white px-4 py-2 rounded-lg ${
+                          !rating || isSubmittingReview ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Reviews list */}
+                  <div className="space-y-4">
+                    {reviews.length === 0 ? (
+                      <p className="text-surface-500">No reviews yet. Be the first to review!</p>
+                    ) : (
+                      reviews.map((review) => (
+                        console.log("review", review),
+                        
+                        <div key={review.id} className="border-b border-surface-200 pb-4 p-2">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-medium">
+                              {review.user_name || review.user?.email || 'Anonymous'}
+                            </h4>
+                            <div className="flex">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star 
+                                  key={star}
+                                  className={`h-4 w-4 ${star <= review.rating ? 'text-yellow-400' : 'text-surface-300'}`}
+                                  fill={star <= review.rating ? 'currentColor' : 'none'}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <p className="text-surface-600 text-sm mb-2">
+                            {new Date(review.created_at).toLocaleDateString()}
+                          </p>
+                          <p className="text-surface-700">{review.comment}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
               
               <div className="p-6">
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-4">

@@ -1,54 +1,115 @@
-import { BarChart3, Package, DollarSign, Star, Users, TrendingUp, Zap, ShoppingBag } from 'lucide-react';
-import type { Product, User } from '../types';
+import { BarChart3, Package, DollarSign, Star, Users, TrendingUp, Zap, ShoppingBag, Shield } from 'lucide-react';
+import type { Product } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
-interface DashboardPageProps {
-  user: User;
-  products: Product[];
-}
+export function DashboardPage() {
+  // All hooks must be called unconditionally at the top level
+  const { user, loading } = useAuth();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [userList, setUserList] = useState([])
+  const [reviews, setReviews] = useState([]); 
+  const [loadingReviews ,setLoadingReviews] = useState(false)
+  console.log("🚀 ~ DashboardPage ~ reviews:", reviews)
+  const navigate = useNavigate();
 
-export function DashboardPage({ products }: DashboardPageProps) {
-  const {user, loading} = useAuth()
+  useEffect(() => {
+    if (!user?.id) return;
+  
+    const fetchDashboardData = async () => {
+      try {
+        setLoadingProducts(true);
+        setLoadingReviews(true);
+  
+        // First fetch products
+        const { data: productsData, error: productsError } = await supabase
+          .from('solutions')
+          .select('*')
+          .eq('user_id', user.id);
+  
+        if (productsError) throw productsError;
+        setProducts(productsData || []);
+  
+        // Then fetch reviews only if we have products
+        if (productsData && productsData.length > 0) {
+          const { data: reviewsData, error: reviewsError } = await supabase
+            .from('reviews')
+            .select()
+            .in('solution_id', productsData.map(p => p.id));
+  
+          if (reviewsError) throw reviewsError;
+          setReviews(reviewsData || []);
+        }
+  
+        // Fetch user count
+        const { count: userCount, error: usersError } = await supabase
+          .from('users')
+          .select('*', { count: 'exact', head: true });
+  
+        if (usersError) throw usersError;
+        setUserList(userCount || 0);
+  
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setLoadingProducts(false);
+        setLoadingReviews(false);
+      }
+    };
+  
+    fetchDashboardData();
+  }, [user?.id]);
 
-  if (loading) {
-    return <div className='bg-white z-10 h-full'>
-         <svg
-              className="animate-spin h-5 w-5 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-              />
-            </svg>
-            Loading...
-    </div>
+  // Handle loading states
+  if (loading || loadingProducts || loadingReviews) {
+    return (
+      <div className="min-h-screen pt-20 bg-white flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <svg
+            className="animate-spin h-12 w-12 text-secondary-500 mb-4"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+          </svg>
+          <p>Loading dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
     return (
-    <div className='bg-white z-10 h-full'>
-    return Please log in
-    </div>
-    )
+      <div className="min-h-screen pt-20 bg-white flex items-center justify-center">
+        <div className="text-center p-8 max-w-md">
+          <Shield className="h-12 w-12 text-surface-400 mx-auto mb-4" />
+          <h2 className="text-xl font-bold mb-2">Authentication Required</h2>
+          <p className="text-surface-600 mb-6">
+            Please sign in to access your dashboard
+          </p>
+          <button 
+            onClick={() => navigate('/')}
+            className="px-6 py-3 bg-secondary-500 hover:bg-secondary-600 text-white rounded-lg"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
   }
 
-  
-  console.log("user", user);
-  const userProducts = products.filter(product => product.creator === user.name);
-  const hasApprovedProducts = userProducts.length > 0;
 
+  // Filter products - ensure this matches your data structure
+  const userProducts = products.filter(product => 
+    product?.user_id === user.id || product?.creator?.creator_id === user.id
+  );
+
+  const hasApprovedProducts = userProducts.length > 0;
   // If user has no approved products, show buyer dashboard
   if (!hasApprovedProducts) {
     return (
@@ -61,7 +122,7 @@ export function DashboardPage({ products }: DashboardPageProps) {
                 Track your purchases and manage your AI workflow integrations
               </p>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
                 <div className="bg-white rounded-xl p-6 border border-surface-200 shadow-card">
                   <h3 className="font-medium mb-2">Purchased Solutions</h3>
                   <p className="text-3xl font-bold text-secondary-500">0</p>
@@ -72,12 +133,6 @@ export function DashboardPage({ products }: DashboardPageProps) {
                   <h3 className="font-medium mb-2">Total Spent</h3>
                   <p className="text-3xl font-bold text-secondary-500">$0</p>
                   <p className="text-sm text-surface-600 mt-1">Lifetime purchases</p>
-                </div>
-                
-                <div className="bg-white rounded-xl p-6 border border-surface-200 shadow-card">
-                  <h3 className="font-medium mb-2">Active Subscriptions</h3>
-                  <p className="text-3xl font-bold text-secondary-500">0</p>
-                  <p className="text-sm text-surface-600 mt-1">Monthly recurring</p>
                 </div>
               </div>
               
@@ -110,7 +165,7 @@ export function DashboardPage({ products }: DashboardPageProps) {
     { label: 'Total Sales', value: totalSales, icon: TrendingUp, color: 'from-purple-500 to-purple-700' },
     { label: 'Revenue', value: `$${totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'from-green-500 to-green-700' },
     { label: 'Average Rating', value: averageRating.toFixed(1), icon: Star, color: 'from-yellow-500 to-yellow-700' },
-    { label: 'Active Users', value: totalSales * 2, icon: Users, color: 'from-pink-500 to-pink-700' }
+    { label: 'Active Users', value: userList,  icon: Users, color: 'from-pink-500 to-pink-700' }
   ];
 
   return (
@@ -165,29 +220,56 @@ export function DashboardPage({ products }: DashboardPageProps) {
             </div>
 
             <div className="bg-white rounded-xl border border-surface-200 p-6 shadow-card">
+              
               <h2 className="text-xl font-bold mb-4 font-poppins">Recent Reviews</h2>
-              <div className="space-y-4">
-                {userProducts.map(product => (
-                  <div key={product.id} className="p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="font-medium">{product.title}</p>
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <Star 
-                            key={i}
-                            className={`h-4 w-4 ${i < 4 ? 'text-yellow-400' : 'text-surface-300'}`}
-                            fill={i < 4 ? 'currentColor' : 'none'}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-sm text-surface-600">
-                      "Great automation tool! Saved me hours of work." - John Doe
-                    </p>
+              {reviews.length === 0 ? (
+                <p className="text-surface-500 text-center py-4">No reviews yet</p>
+              ) : loadingReviews ? (
+                  <div className="min-h-screen pt-20 bg-white flex items-center justify-center">
+                  <div className="flex flex-col items-center">
+                    <svg
+                      className="animate-spin h-12 w-12 text-secondary-500 mb-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                    </svg>
+                    <p>Loading dashboard...</p>
                   </div>
-                ))}
-              </div>
+                </div>
+               ):(
+                <div className="space-y-4">
+                  {reviews.slice(0, 5).map(review => {
+                    const product = products.find(p => p.id === review.solution_id);
+                    return (
+                      <div key={review.id} className="p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="">{product?.title || 'Unknown Product'}</p>
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <Star 
+                                key={i}
+                                className={`h-4 w-4 ${i < review.rating ? 'text-yellow-400' : 'text-surface-300'}`}
+                                fill={i < review.rating ? 'currentColor' : 'none'}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <p className="font-medium mb-1">
+                          {review.comment || "No comment provided"}
+                        </p>
+                        <p className="text-surface-500">
+                          - {review.user_name || review.user?.email?.split('@')[0] || 'Anonymous'}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+
           </div>
         </div>
       </div>

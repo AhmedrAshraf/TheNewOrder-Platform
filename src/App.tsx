@@ -27,60 +27,8 @@ import { QuantumBackground } from './components/QuantumBackground';
 import type { Product, AuthState } from './types';
 import { supabase } from './lib/supabase';
 
-const MARKETPLACE_PRODUCTS: Product[] = [
-  {
-    id: '4',
-    title: 'Pinterest Automation Suite',
-    description: 'Automate your Pinterest marketing with AI-powered pin creation, scheduling, and analytics',
-    price: 499,
-    image: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&q=80',
-    creator: 'Social AI Labs',
-    category: 'automation',
-    tags: ['pinterest', 'social-media', 'marketing'],
-    priceId: 'price_1P3GVJGk9bLuwZYPeXAtXyoEgX4zJqD8MA1jU04CGJ5DTGyLU9QVOp7zt0SLqreCTJ8PRGP194TxehsLagPYKVwf00wRA7hvqq',
-    pulses: 156
-  },
-  {
-    id: '5',
-    title: 'Social Content Generator',
-    description: 'AI-powered content creation for all major social media platforms',
-    price: 299,
-    image: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?auto=format&fit=crop&q=80',
-    creator: 'Content AI',
-    category: 'automation',
-    tags: ['content', 'social-media', 'ai'],
-    priceId: 'price_1P3GVJGk9bLuwZYPeXAtXyoEgX4zJqD8MA1jU04CGJ5DTGyLU9QVOp7zt0SLqreCTJ8PRGP194TxehsLagPYKVwf00wRA7hvqq',
-    pulses: 243
-  },
-  {
-    id: '6',
-    title: 'AI Video Generator Pro',
-    description: 'Create professional-quality videos from text prompts using advanced AI technology',
-    price: 599,
-    image: 'https://images.unsplash.com/photo-1626544827763-d516dce335e2?auto=format&fit=crop&q=80',
-    creator: 'VideoAI Labs',
-    category: 'automation',
-    tags: ['video', 'content', 'ai'],
-    priceId: 'price_1P3GVJGk9bLuwZYPeXAtXyoEgX4zJqD8MA1jU04CGJ5DTGyLU9QVOp7zt0SLqreCTJ8PRGP194TxehsLagPYKVwf00wRA7hvqq',
-    pulses: 187
-  },
-  {
-    id: '7',
-    title: 'Email Marketing AI',
-    description: 'Intelligent email marketing automation with AI-powered content generation and optimization',
-    price: 399,
-    image: 'https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?auto=format&fit=crop&q=80',
-    creator: 'MarketingAI',
-    category: 'automation',
-    tags: ['email', 'marketing', 'automation'],
-    priceId: 'price_1P3GVJGk9bLuwZYPeXAtXyoEgX4zJqD8MA1jU04CGJ5DTGyLU9QVOp7zt0SLqreCTJ8PRGP194TxehsLagPYKVwf00wRA7hvqq',
-    pulses: 165
-  }
-];
-
 function AppContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [products, setProducts] = useState<Product[]>(MARKETPLACE_PRODUCTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOption, setFilterOption] = useState<'latest' | 'popular' | 'trending'>('popular');
   const { setUser , user} = useAuth();
@@ -153,7 +101,7 @@ function AppContent() {
             </>
           } />
           <Route path="/upload" element={<UploadPage />} />
-          <Route path="/dashboard" element={<DashboardPage products={products} />} />
+          <Route path="/dashboard" element={<DashboardPage/>} />
           <Route path="/marketplace" element={<MarketplacePage />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
           <Route path="/admin" element={<AdminPage/>} />
