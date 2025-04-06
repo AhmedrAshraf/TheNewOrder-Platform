@@ -11,6 +11,7 @@ import type { Product, AuthState, ConsultationOption } from '../types';
 import {useAuth} from "../context/AuthContext"
 import { supabase } from '../lib/supabase';
 import { AuthModal } from '../components/AuthModal';
+import axios from 'axios';
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -48,15 +49,37 @@ export function ProductDetailPage() {
     fetchProduct();
   }, [id]);
 
+  console.log(product?.user_id);
+
   const handlePurchase = async () => {
-    // payment
-    if(!user){
-      setShowAuthModal(true)
+    if (!user) {
+      setShowAuthModal(true);
       return;
-    }else{
+    } else {
       console.log("working");
+      try {
+        const response = await axios.post('http://localhost:8000/api/create-checkout-session', {
+          uid: user?.id,
+          totalprice: product?.price,
+          customerEmail: user?.email,
+          solution_id: product?.id,
+          sellerId: product?.user_id,
+        },{ headers: {
+          'Content-Type': 'application/json',
+        }}
+      );
+        
+        console.log("🚀 ~ handlePurchase ~ response:", response);
+        if (response.status === 200) {
+          const { session } = response.data;
+          window.location.href = session.url;
+        }
+      } catch (error) {
+        console.error("Error during purchase:", error);
+      }
     }
   };
+  
 
   const handlePulse = async() => {
     if (!user) {

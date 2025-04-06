@@ -29,36 +29,6 @@ export function Navbar({
   const [showChatInbox, setShowChatInbox] = useState(false);
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    if (!user?.id) return;
-  
-    const channel = supabase
-      .channel('realtime-unread-messages')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-        },
-        (payload) => {
-          const msg = payload.new;
-          if (msg && msg.is_read === false && msg.sender_id !== user.id) {
-            setUnreadCount((prev) => prev + 1);
-          }
-          if (payload.eventType === 'UPDATE' && msg.is_read === true && msg.sender_id !== user.id) {
-            setUnreadCount((prev) => Math.max(0, prev - 1));
-          }
-        }
-      )
-      .subscribe();
-  
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
-
   
   useEffect(() => {
     if (!user?.id) return;

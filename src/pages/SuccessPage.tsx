@@ -1,15 +1,121 @@
-import React, { useEffect, useState } from 'react';
-import { CheckCircle, ArrowRight, Download, MessageCircle, Rocket } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import {
+  CheckCircle,
+  ArrowRight,
+  Download,
+  MessageCircle,
+  Rocket,
+} from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
 
 export function SuccessPage() {
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [bookingDetail, setBookingDetail] = useState(null);
+  const [searchParams] = useSearchParams();
+
+  const data = {
+    status: searchParams.get("status"),
+    uid: searchParams.get("uid"),
+    sessionId: searchParams.get("sessionId"),
+    amount: searchParams.get("totalPrice"),
+    solution_id: searchParams.get("solutionId"),
+    sellerId: searchParams.get("sellerId"),
+  };
+  console.log(data);
+  
+  const updateBooking = async () => {
+    setLoading(true);
+    try {
+      // Check if the booking already exists
+      const { data: existingBooking } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("user_id", user?.id)
+        .eq("subscription_id", data.sessionId)
+        .eq("solution_id", data.solution_id)
+        .single();
+
+      // If booking exists, avoid inserting it again
+      if (existingBooking) {
+        console.log("Booking already exists:", existingBooking);
+        setBookingDetail(existingBooking);
+        setLoading(false);
+        return;
+      }
+
+      const { data: bookingData, error } = await supabase
+        .from("orders")
+        .insert([
+          {
+            user_id: user?.id,
+            subscription_id: data.sessionId,
+            payment_status: data.status,
+            amount: data.amount,
+            status: "pending",
+            solution_id: data.solution_id,
+            sellerId: data.sellerId
+          },
+        ])
+        .select("*");
+
+      if (error) {
+        console.error("Error updating booking:", error);
+      }
+
+      setBookingDetail(bookingData);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    setSessionId(urlParams.get('session_id'));
-  }, []);
+    if (!user) {
+      console.log("User is not available yet.");
+      return;
+    }
+
+    if (user?.id === data.uid && data.status === "complete" && data.sessionId) {
+      console.log("User is found and payment is complete, updating booking...");
+      updateBooking();
+    } else {
+      console.log("User ID doesn't match, or missing data.");
+    }
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-50">
+        <button
+          type="button"
+          className="bg-gray-300 px-4 py-2 rounded flex items-center"
+          disabled
+        >
+          <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            ></path>
+          </svg>
+          Loading...
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-20 bg-white">
