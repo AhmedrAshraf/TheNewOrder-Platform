@@ -495,7 +495,7 @@ export function MessagesPage() {
                 <label className="block text-sm font-medium mb-1">Proposal Title</label>
                 <input
                   value={proposal.title}
-                  onChange={(e) => setProposal(prev => ({ ...prev, title: parseInt(e.target.value) || '' }))}
+                  onChange={(e) => setProposal(prev => ({ ...prev, title: e.target.value || '' }))}
                   className="w-full bg-white border border-surface-200 rounded-lg py-2 px-3 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
                   placeholder="Describe what you're making proposal for..."
                 />

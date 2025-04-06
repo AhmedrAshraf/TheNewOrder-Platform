@@ -13,7 +13,7 @@ import { supabase } from '../lib/supabase';
 
 export function AdminPage() {
   const navigate = useNavigate();
-    const { user } = useAuth();
+  const { user } = useAuth();
   
   const { addNotification } = useNotifications();
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
@@ -26,68 +26,64 @@ export function AdminPage() {
   const [latestUserTime, setLatestUserTime] = useState(null);
   const [latestApprovalTime, setLatestApprovalTime] = useState(null)
   const [newOrderCompleted, setNewOrderCompleted] = useState(null)
+  const [pendingOrders, setPendingOrders] = useState([]);
+  const [solutionsData, setSolutionsData] = useState([]);
   
-  const fetchUser = async () => {
-    const { data, error } = await supabase
-      .from('users')
-      .select();
-
-    if (error) {
-      console.log("error", error);
-      return [];
-    } else {
-      return data || [];
-    }
-  };
-  fetchUser().then(fetchedUsers => setUsers(fetchedUsers.length));
-
-  const fetchSolution = async () => {
-    const { data, error } = await supabase
-      .from('solutions')
-      .select();
-
-    if (error) {
-      console.log("error", error);
-      return [];
-    } else {
-      return data || [];
-    }
-  };
-  fetchSolution().then(fetchedSolution => setSolution(fetchedSolution.length));
-
-  const fetchPendingReviews = async () => {
-    const { data, error } = await supabase
-      .from('solutions')
-      .select()
-      .eq('status', 'pending');
-
-    if (error) {
-      console.log("error", error);
-      return [];
-    } else {
-      return data || [];
-    }
-  };
-  fetchPendingReviews().then(pendingReviews => setPendingList(pendingReviews.length));
-
-  const RecentSubmissions = async () => {
-    const { data, error } = await supabase
-      .from('solutions')
-      .select()
-      .eq('status', 'pending');
-
-    if (error) {
-      console.log("error", error);
-    } else {
-      setRecentSolution(data)
-    }
-  };
-  useEffect(()=>{
-    RecentSubmissions()
-  }, [])
-
-
   useEffect(() => {
+    const fetchUser = async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select();
+  
+      if (error) {
+        console.log("error", error);
+        return [];
+      } else {
+        setUsers(data || []);
+      }
+    };
+
+    const fetchSolution = async () => {
+      const { data, error } = await supabase
+        .from('solutions')
+        .select();
+  
+      if (error) {
+        console.log("error", error);
+        return [];
+      } else {
+        setSolutionsData(data || []); 
+        setSolution(data?.length || 0);
+      }
+    };
+
+    const fetchPendingReviews = async () => {
+      const { data, error } = await supabase
+        .from('solutions')
+        .select()
+        .eq('status', 'pending');
+  
+      if (error) {
+        console.log("error", error);
+        return [];
+      } else {
+        setPendingList(data?.length || 0);
+      }
+    };
+
+    const RecentSubmissions = async () => {
+      const { data, error } = await supabase
+        .from('solutions')
+        .select()
+        .eq('status', 'pending');
+  
+      if (error) {
+        console.log("error", error);
+      } else {
+        setRecentSolution(data || [])
+      }
+    };
+
     const fetchLatestUser = async () => {
       const { data, error } = await supabase
         .from("users")
@@ -98,7 +94,7 @@ export function AdminPage() {
         console.error("Error fetching latest user:", error);
         return;
       }
-      if (data.length > 0) {
+      if (data?.length > 0) {
         const latestTime = new Date(data[0].created_at);
         setLatestUserTime(formatDistanceToNow(latestTime, { addSuffix: true }));
       }
@@ -111,8 +107,6 @@ export function AdminPage() {
         .order("approved_at", { ascending: true }) 
         .limit(1)
         .maybeSingle();
-
-        console.log("approved data", data);
       
       if (error) {
         console.error("Error fetching latest approved solution:", error);
@@ -129,7 +123,6 @@ export function AdminPage() {
       } else {
         setLatestApprovalTime("No approved solution found");
       }
-      
     };
 
     const fetchNewOrder = async () => {
@@ -140,22 +133,76 @@ export function AdminPage() {
         .limit(1); 
 
       if (error) {
-        console.error("Error fetching latest user:", error);
+        console.error("Error fetching latest order:", error);
         return;
       }
-      if (data.length > 0) {
+      if (data?.length > 0) {
         const latestTime = new Date(data[0].created_at);
         setNewOrderCompleted(formatDistanceToNow(latestTime, { addSuffix: true }));
-      }else{
+      } else {
         setNewOrderCompleted("No sale found")
       }
     };
 
-    fetchNewOrder()
-    fetchLatestApproval();
+    const fetchPendingOrders = async () => {
+      const { data: ordersData, error: ordersError } = await supabase
+        .from("orders")
+        .select("*")
+        .eq('PaidFromAdmin', false);
+
+      if (ordersError) {
+        console.error("Error fetching pending orders:", ordersError);
+        return;
+      }
+
+      // Fetch proposal details for orders without solution_id but with message_id
+      const ordersWithProposals = await Promise.all(
+        ordersData.map(async (order) => {
+          console.log("🚀 ~ ordersData.map ~ order:", order)
+          if (!order.solution_id && order.message_id) {
+            const { data: messageData, error: messageError } = await supabase
+              .from("messages")
+              .select("proposal")
+              .eq('id', order.message_id)
+              .single();
+            
+              console.log("🚀 ~ ordersData.map ~ messageData:", messageData)
+              if (!messageError && messageData?.proposal) {
+              try {
+                return {
+                  ...order,
+                  proposal: typeof messageData.proposal === 'string' 
+                    ? JSON.parse(messageData.proposal) 
+                    : messageData.proposal
+                };
+              } catch (e) {
+                console.error("Error parsing proposal:", e);
+                return order;
+              }
+            }
+          }
+          return order;
+        })
+      );
+
+      setPendingOrders(ordersWithProposals || []);
+    };
+
+    fetchUser();
+    fetchSolution();
+    fetchPendingReviews();
+    RecentSubmissions();
     fetchLatestUser();
+    fetchLatestApproval();
+    fetchNewOrder();
+    fetchPendingOrders();
   }, []);
 
+  const getSolutionDetails = (solution_id) => {
+    if (!solution_id) return null;
+    return solutionsData.find(solution => solution.id === solution_id);
+  };
+  
   const handleCreateAnnouncement = () => {
     setShowAnnouncementModal(true);
   };
@@ -163,7 +210,6 @@ export function AdminPage() {
   const handleSubmitAnnouncement = () => {
     if (!announcementTitle.trim() || !announcementMessage.trim()) return;
 
-    // Create the announcement notification
     addNotification({
       type: 'system',
       title: announcementTitle,
@@ -171,13 +217,25 @@ export function AdminPage() {
       link: '/blog/announcements'
     });
 
-    // Reset form and close modal
     setAnnouncementTitle('');
     setAnnouncementMessage('');
     setShowAnnouncementModal(false);
   };
 
-  // Redirect if not admin
+  const handlePaidFromAdmin = async (orderId: any) => {
+    const { error } = await supabase
+      .from('orders')
+      .update({ PaidFromAdmin: true })
+      .eq('id', orderId);
+
+    if (error) {
+      console.error("Error updating payment status:", error);
+      return;
+    }
+
+    setPendingOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
+  };
+
   if (!user || user.role !== 'admin') {
     return (
       <div className="min-h-screen pt-20 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
@@ -198,9 +256,8 @@ export function AdminPage() {
     );
   }
 
-  // Admin dashboard stats
   const stats = [
-    { label: 'Total Users', value: users, icon: Users, change: '+12%', color: 'from-blue-500 to-blue-700' },
+    { label: 'Total Users', value: users.length, icon: Users, change: '+12%', color: 'from-blue-500 to-blue-700' },
     { label: 'Total Solutions', value: solution, icon: Package, change: '+8%', color: 'from-purple-500 to-purple-700' },
     { label: 'Revenue', value: '$48,290', icon: DollarSign, change: '+24%', color: 'from-green-500 to-green-700' },
     { label: 'Pending Reviews', value: pendingList, icon: Clock, change: '-3%', color: 'from-yellow-500 to-yellow-700' }
@@ -225,8 +282,8 @@ export function AdminPage() {
 
           {/* Admin Navigation */}
           <AdminNav />
-
           {/* Stats Cards */}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {stats.map((stat, index) => (
               <div key={index} className="bg-white rounded-xl p-6 border border-surface-200 shadow-card hover:shadow-card-hover transition-all duration-300">
@@ -252,7 +309,6 @@ export function AdminPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            {/* Recent Submissions */}
             <div className="bg-white rounded-xl p-6 border border-surface-200 shadow-card">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold font-poppins">Recent Submissions</h2>
@@ -281,7 +337,6 @@ export function AdminPage() {
                 })}
             </div>
 
-            {/* Recent Activity */}
             <div className="bg-white rounded-xl p-6 border border-surface-200 shadow-card">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold font-poppins">Recent Activity</h2>
@@ -305,10 +360,57 @@ export function AdminPage() {
               </div>
             </div>
           </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-8 mb-8">
+            <div className="bg-white rounded-xl p-6 border border-surface-200 shadow-card">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold font-poppins">Pending Payments From Admin</h2>
+                <button 
+                  onClick={() => navigate('/admin/orders')}
+                  className="text-sm text-secondary-500 hover:text-secondary-600 flex items-center gap-1"
+                >
+                  View All <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              {pendingOrders.map((order, index) => {
+                const timeAgo = formatDistanceToNow(new Date(order.created_at), { addSuffix: true });
+                const solutionDetails = getSolutionDetails(order?.solution_id);
+                const proposal = order?.proposal;
+                
+                return (
+                  <div key={index} className="flex items-center gap-4 p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors">
+                    <img 
+                      src={solutionDetails?.image || proposal?.image || order.image} 
+                      alt="Order" 
+                      className="w-12 h-12 rounded-lg object-cover"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-medium text-surface-900">
+                        {solutionDetails?.title || proposal?.title || order?.title}
+                      </h3>
+                      <p className="text-sm text-surface-600">Ordered {timeAgo}</p>
+                    </div>
+                    <span className="px-2 py-1 bg-secondary-500 border-surface-200 text-white text-md rounded-lg flex items-center gap-1">
+                      ${order?.amount}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePaidFromAdmin(order.id);
+                      }}
+                      className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                    >
+                      Mark as Paid
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Announcement Modal */}
       {showAnnouncementModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white p-8 rounded-xl w-full max-w-md relative border border-surface-200 shadow-xl">
