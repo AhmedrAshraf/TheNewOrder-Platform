@@ -85,7 +85,7 @@ function MultiSelectDropdown({
                 onClick={() => handleSelect(option)}
                 className="w-full text-left px-4 py-2 hover:bg-surface-100 flex items-center justify-between"
               >
-                <span>{option === 'all' ? 'All' : option.charAt(0).toUpperCase() + option.slice(1)}</span>
+                <span>{option === 'all' ? 'All' : option?.charAt(0).toUpperCase() + option.slice(1)}</span>
                 {selectedValues.includes(option) ? (
                   <Check className={`h-4 w-4 ${color === 'blue' ? 'text-primary-400' : color === 'green' ? 'text-secondary-400' : 'text-primary-400'}`} />
                 ) : null}
@@ -155,7 +155,7 @@ export function MarketplacePage() {
       const { data, error } = await supabase
       .from('solutions')
       .select()
-      .eq('status', 'approved')
+      // .eq('status', 'approved')
 
       if(error){
         console.error("error while fetching solutions", error);

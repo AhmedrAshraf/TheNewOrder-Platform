@@ -158,7 +158,7 @@ export function AdminStatsPage() {
                         : 'text-surface-600 hover:text-surface-900'
                     }`}
                   >
-                    {range.charAt(0).toUpperCase() + range.slice(1)}
+                    {range?.charAt(0).toUpperCase() + range.slice(1)}
                   </button>
                 ))}
               </div>

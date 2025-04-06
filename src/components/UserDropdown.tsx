@@ -64,7 +64,7 @@ export function UserDropdown({onSignOut, onAuthClick }: UserDropdownProps) {
                 <div className="flex items-center space-x-3">
                   <div className="bg-white rounded-full w-10 h-10 flex items-center justify-center">
                     <span className="text-secondary-500 font-semibold">
-                      {user?.name.charAt(0).toUpperCase()}
+                      {user?.name?.charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <div>

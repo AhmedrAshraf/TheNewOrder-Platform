@@ -293,7 +293,7 @@ export function AdminUsersPage({ auth }: AdminUsersPageProps) {
                         <div className="flex items-center gap-3">
                           <div className="bg-secondary-500 rounded-full w-8 h-8 flex items-center justify-center">
                             <span className="text-white font-semibold">
-                              {user.name.charAt(0).toUpperCase()}
+                              {user?.name?.charAt(0).toUpperCase()}
                             </span>
                           </div>
                           <div>

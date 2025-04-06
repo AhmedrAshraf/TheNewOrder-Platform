@@ -536,7 +536,7 @@ export function ProductDetailPage() {
               <div className="flex items-center gap-3 mb-3">
                 <div className="bg-secondary-500 rounded-full w-12 h-12 flex items-center justify-center">
                   <span className="text-white font-semibold">
-                    {product.creator?.creator_name.charAt(0).toUpperCase()}
+                    {product.creator?.creator_name?.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div>
