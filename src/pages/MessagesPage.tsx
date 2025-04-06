@@ -1,71 +1,110 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search, X, ChevronLeft, Phone, Video, MoreVertical, Send, Paperclip, Smile, MessageCircle } from 'lucide-react';
+import { useState, useEffect , useRef} from 'react';
+import { Search,  ChevronLeft, Phone, Video, MoreVertical, Send, Paperclip, Smile, MessageCircle } from 'lucide-react';
 import type { ChatMessage } from '../types';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 export function MessagesPage() {
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [newMessage, setNewMessage] = useState('');
-  const navigate = useNavigate();
+  const [chats, setChats] = useState(null)
+  const [chatId, setChatId] = useState(null)
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const {user} = useAuth()
+  const messagesEndRef = useRef(null);
+  const currentUserId = user?.id
 
-  // Sample chats data
-  const chats = [
-    {
-      id: 'chat1',
-      name: 'AI Labs',
-      lastMessage: 'Thanks for your interest in our AI Document Processor',
-      timestamp: '2025-06-15T14:30:00Z',
-      unread: true,
-      avatar: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80'
-    },
-    {
-      id: 'chat2',
-      name: 'VideoAI',
-      lastMessage: 'I can help you customize the workflow',
-      timestamp: '2025-06-14T09:15:00Z',
-      unread: false,
-      avatar: 'https://images.unsplash.com/photo-1626544827763-d516dce335e2?auto=format&fit=crop&q=80'
-    },
-    {
-      id: 'chat3',
-      name: 'Support AI',
-      lastMessage: 'Here are the integration details you requested',
-      timestamp: '2025-06-13T16:45:00Z',
-      unread: false,
-      avatar: 'https://images.unsplash.com/photo-1596524430615-b46475ddff6e?auto=format&fit=crop&q=80'
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+  
+    const fetchChats = async () => {
+      const { data: fetchChat, error: fetchError } = await supabase
+        .from('chats') 
+        .select()
+        .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+        .order('created_at', { ascending: false });
+  
+      if (fetchError) {
+        console.error('Error fetching chats:', fetchError);
+      } else {
+        setChats(fetchChat);
+      }
+    };
+  
+    fetchChats();
+  }, [user?.id]);
+  
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!selectedChat) return;
+  
+      const { data: messagesData, error: messagesError } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('chat_id', selectedChat)
+        .order('created_at', { ascending: true });
+  
+      if (messagesError) {
+        console.error("Error while fetching messages:", messagesError);
+      } else {
+        setMessages(messagesData || []);
+      }
+    };
+  
+    fetchMessages();
+  }, [selectedChat]);
+
+  
+
+  const getChatParticipantName = (chat: any) => {
+    if (chat.buyer_id === currentUserId) {
+      return chat.seller_name;
+    } else if (chat.seller_id === currentUserId) {
+      return chat.buyer_name;
     }
-  ];
-
-  // Sample messages for the selected chat
-  const messages: ChatMessage[] = [
-    {
-      id: '1',
-      senderId: 'user',
-      senderName: 'You',
-      receiverId: 'creator',
-      content: "Hi, I'm interested in your AI Document Processor",
-      timestamp: '2025-06-15T14:25:00Z',
-      isRead: true,
-      type: 'text'
-    },
-    {
-      id: '2',
-      senderId: 'creator',
-      senderName: 'AI Labs',
-      receiverId: 'user',
-      content: 'Thanks for your interest! What would you like to know about it?',
-      timestamp: '2025-06-15T14:30:00Z',
-      isRead: true,
-      type: 'text'
-    }
-  ];
-
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
-    // In a real app, this would send the message to the backend
-    setNewMessage('');
+    return 'Unknown'; 
   };
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim()) return;
+  
+    try {
+      const currentChat = chats?.find(c => c.id === selectedChat);
+      const userType = currentChat?.seller_id === user.id ? 'seller' : 'buyer';
+  
+      const { data: messagesData, error: messagesError } = await supabase
+        .from('messages')
+        .insert([
+          {
+            chat_id: selectedChat,
+            sender_id: user.id,
+            message: newMessage,
+            is_read: false,
+            type: userType,
+          },
+        ])
+        .select()
+        .maybeSingle();
+  
+      if (messagesError) {
+        console.error("Error while inserting message:", messagesError);
+        return;
+      }
+  
+      console.log("Message inserted", messagesData);
+      setMessages(prev => [...prev, messagesData]);
+      setNewMessage('');
+    } catch (error) {
+      console.error("Error while inserting message:", error);
+    }
+  };
+  
 
   return (
     <div className="min-h-screen pt-16 bg-surface-50">
@@ -80,38 +119,44 @@ export function MessagesPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search messages..."
                 className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 pl-10 focus:outline-none focus:border-secondary-500"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
               />
-              <Search className="absolute left-3 top-2.5 h-5 w-5 text-surface-400" />
+              <Search onClick={handleSendMessage} className="absolute left-3 top-2.5 h-5 w-5 text-surface-400" />
             </div>
           </div>
 
           <div className="overflow-y-auto h-[calc(100vh-8rem)]">
-            {chats.map((chat) => (
+            {chats?.map((chat) => (
               <button
-                key={chat.id}
-                onClick={() => setSelectedChat(chat.id)}
+                key={chat?.id}
+                onClick={() => setSelectedChat(chat?.id)}
                 className={`w-full p-4 flex items-center gap-3 hover:bg-surface-50 transition-colors ${
-                  selectedChat === chat.id ? 'bg-surface-50' : ''
+                  selectedChat === chat?.id ? 'bg-surface-50' : ''
                 }`}
               >
                 <div className="relative">
                   <img
-                    src={chat.avatar}
-                    alt={chat.name}
+                    src={chat?.avatar || "https://static-00.iconduck.com/assets.00/user-avatar-1-icon-2048x2048-935gruik.png" }
+                    alt="user avatar"
                     className="w-12 h-12 rounded-full object-cover"
                   />
-                  {chat.unread && (
+                  {chat?.unread && (
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-secondary-500 rounded-full border-2 border-white"></div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-medium truncate">{chat.name}</h3>
+                    <h3 className="font-medium truncate">{getChatParticipantName(chat)}</h3>
                     <span className="text-xs text-surface-400">
-                      {new Date(chat.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(chat?.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <p className="text-sm text-surface-500 truncate">{chat.lastMessage}</p>
+                  <p className="text-sm text-surface-500 truncate">{chat?.lastMessage}</p>
                 </div>
               </button>
             ))}
@@ -120,7 +165,7 @@ export function MessagesPage() {
 
         {/* Chat Window */}
         {selectedChat ? (
-          <div className="flex-1 flex flex-col bg-white">
+          <div ref={messagesEndRef} className="flex-1 flex flex-col bg-white">
             {/* Chat Header */}
             <div className="p-4 border-b border-surface-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -131,13 +176,12 @@ export function MessagesPage() {
                   <ChevronLeft className="h-5 w-5" />
                 </button>
                 <img
-                  src={chats.find(c => c.id === selectedChat)?.avatar}
+                  src={chats.find(c => c.id === selectedChat)?.avatar || "https://static-00.iconduck.com/assets.00/user-avatar-1-icon-2048x2048-935gruik.png"}
                   alt="Chat Avatar"
                   className="w-10 h-10 rounded-full object-cover"
                 />
                 <div>
-                  <h2 className="font-medium">{chats.find(c => c.id === selectedChat)?.name}</h2>
-                  <p className="text-sm text-surface-400">Online</p>
+                  <h4 className="font-medium truncate">{getChatParticipantName(chats.find(c => c.id === selectedChat))}</h4>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -158,18 +202,16 @@ export function MessagesPage() {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.senderId === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${message.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
                     className={`max-w-[70%] rounded-2xl p-3 ${
-                      message.senderId === 'user'
-                        ? 'bg-secondary-500 text-white'
-                        : 'bg-surface-100'
+                      message.sender_id === user?.id ? 'bg-secondary-500 text-white': 'bg-surface-100'
                     }`}
                   >
-                    <p>{message.content}</p>
+                    <p>{message.message}</p>
                     <p className="text-xs opacity-70 text-right mt-1">
-                      {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                 </div>

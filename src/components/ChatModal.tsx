@@ -130,7 +130,10 @@ export function ChatModal({ isOpen, onClose, product, user, consultationOptions 
             .insert([{ 
               buyer_id: buyerId, 
               seller_id: sellerId, 
-              solution_id: product.id 
+              solution_id: product.id ,
+              buyer_name: user.name,
+              seller_name: creatorName,
+              product_title: product.title,
             }])
             .select()
             .maybeSingle()
