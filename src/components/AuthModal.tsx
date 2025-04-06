@@ -272,9 +272,6 @@ export function AuthModal({
                   required
                 />
               </div>
-              <p className="text-xs text-surface-500 mt-1">
-                Use an email with "admin" to access the admin panel
-              </p>
             </div>
 
             <div>
