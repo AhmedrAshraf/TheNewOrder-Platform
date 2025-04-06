@@ -58,7 +58,8 @@ export function ProductDetailPage() {
     } else {
       console.log("working");
       try {
-        const response = await axios.post('http://localhost:8000/api/create-checkout-session', {
+        // const response = await axios.post('http://localhost:8000/api/create-checkout-session', {
+        const response = await axios.post('https://the-new-order-platform-server.vercel.app/api/create-checkout-session', {
           uid: user?.id,
           totalprice: product?.price,
           customerEmail: user?.email,

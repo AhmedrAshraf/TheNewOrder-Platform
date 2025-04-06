@@ -120,6 +120,7 @@ export function SuccessPage() {
   return (
     <div className="min-h-screen pt-20 bg-white">
       <div className="relative">
+        {bookingDetail ? (
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="bg-white rounded-xl p-8 border border-surface-200 shadow-card">
             <div className="text-center mb-8">
@@ -203,6 +204,14 @@ export function SuccessPage() {
             </div>
           </div>
         </div>
+    ):(
+      <div className="flex flex-col items-center justify-center h-screen text-center">
+        <div className="shadow p-5 rounded-2xl">
+      <h1 className="text-2xl font-bold text-red-600">No payment found</h1>
+      <p className="mt-2">Your transaction was not completed. Redirecting back...</p>
+      </div>
+    </div>
+    )}
       </div>
     </div>
   );
