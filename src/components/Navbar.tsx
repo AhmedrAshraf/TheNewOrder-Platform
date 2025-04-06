@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState , useEffect} from 'react';
 import { Search, PlusCircle, MessageCircle } from 'lucide-react';
 import { UserDropdown } from './UserDropdown';
 import { ChatInbox } from './ChatInbox';
 import { NotificationCenter } from './NotificationCenter';
 import type { AuthState } from '../types';
 import { useAuth } from "../context/AuthContext";
+import { supabase } from '../lib/supabase';
 
 interface NavbarProps {
   auth: AuthState;
@@ -27,7 +28,58 @@ export function Navbar({
 }: NavbarProps) {
   const [showChatInbox, setShowChatInbox] = useState(false);
   const { user } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
 
+  useEffect(() => {
+    if (!user?.id) return;
+  
+    const channel = supabase
+      .channel('realtime-unread-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+        },
+        (payload) => {
+          const msg = payload.new;
+          if (msg && msg.is_read === false && msg.sender_id !== user.id) {
+            setUnreadCount((prev) => prev + 1);
+          }
+          if (payload.eventType === 'UPDATE' && msg.is_read === true && msg.sender_id !== user.id) {
+            setUnreadCount((prev) => Math.max(0, prev - 1));
+          }
+        }
+      )
+      .subscribe();
+  
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  
+  useEffect(() => {
+    if (!user?.id) return;
+  
+    const fetchUnreadCount = async () => {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact' })
+        .eq('is_read', false)
+        .neq('sender_id', user.id);
+  
+      if (!error && data) {
+        setUnreadCount(data.length);
+      }
+      console.log(data);
+    };
+    
+    fetchUnreadCount();
+  }, [user]);
+
+  
   return (
     <nav className="fixed top-0 w-full bg-white border-b border-surface-200 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -107,16 +159,18 @@ export function Navbar({
                 <span>Submit Solution</span>
               </button>
 
-                <div className="relative">
+              <div className="relative">
                   <button
                     onClick={() => setShowChatInbox(!showChatInbox)}
                     className="p-2 hover:bg-surface-100 rounded-lg relative"
                     title="Messages"
                   >
-                    <MessageCircle className="h-5 w-5 text-surface-600" />
+                    <MessageCircle className="h-5 w-5 text-surface-600" />              
+                  {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-secondary-500 text-black text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                      2
+                      {unreadCount}
                     </span>
+                  )}
                   </button>
                   {showChatInbox && (
                     <ChatInbox onClose={() => setShowChatInbox(false)} />

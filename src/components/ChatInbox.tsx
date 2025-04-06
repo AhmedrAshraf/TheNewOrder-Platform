@@ -4,6 +4,7 @@ import { X, Search, MessageCircle, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { useAuth } from '../context/AuthContext';
+
 interface ChatInboxProps {
   onClose: () => void;
 }
@@ -13,8 +14,8 @@ export function ChatInbox({ onClose }: ChatInboxProps) {
   const chatInboxRef = useRef<HTMLDivElement>(null);
   const [chats, setChats] = useState<any[]>([]);
   const navigate = useNavigate();
-  const {user} = useAuth()
-  const currentUserId = user?.id
+  const { user } = useAuth();
+  const currentUserId = user?.id;
   useClickOutside(chatInboxRef, onClose);
 
   const creatorId = user?.id;
@@ -24,23 +25,22 @@ export function ChatInbox({ onClose }: ChatInboxProps) {
 
     const fetchChats = async () => {
       const { data, error } = await supabase
-        .from('chats') 
-        .select()
+        .from('chats')
+        .select('*, messages(*)')
         .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }) // Ensuring chats are sorted by the most recent
         .limit(4);
 
       if (error) {
         console.error('Error fetching chats:', error);
       } else {
         setChats(data);
-        console.log("data", data);
-        
+        console.log("Chats data:", data);
       }
     };
 
     fetchChats();
-  }, []);
+  }, [user?.id]);
 
   const filteredChats = chats.filter(chat => 
     chat?.buyer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -85,13 +85,10 @@ export function ChatInbox({ onClose }: ChatInboxProps) {
   };
 
   return (
-    <div ref={chatInboxRef} className="absolute right-0 top-12 w-80 md:w-96 bg-red-100 rounded-xl border border-surface-200 shadow-xl z-50">
+    <div ref={chatInboxRef} className="absolute right-0 top-12 w-80 md:w-96 bg-white rounded-xl border border-surface-200 shadow-xl z-50">
       <div className="p-4 border-b border-surface-200 flex items-center justify-between">
         <h3 className="font-semibold">Messages</h3>
-        <button
-          onClick={onClose}
-          className="p-1 hover:bg-surface-100 rounded-full"
-        >
+        <button onClick={onClose} className="p-1 hover:bg-surface-100 rounded-full">
           <X className="h-4 w-4 text-surface-400" />
         </button>
       </div>
@@ -120,12 +117,10 @@ export function ChatInbox({ onClose }: ChatInboxProps) {
             <div
               key={chat?.id}
               onClick={() => handleChatClick(chat?.id, chat?.solution_id)}
-              className={`p-3 border-b border-surface-200 hover:bg-surface-50 cursor-pointer ${
-                chat?.unread ? 'bg-surface-50' : ''
-              }`}
+              className={`p-3 border-b border-surface-200 hover:bg-surface-50 cursor-pointer ${chat?.unread ? 'bg-surface-50' : ''}`}
             >
               <div className="flex items-start gap-3">
-                <img src="https://static-00.iconduck.com/assets.00/user-avatar-1-icon-2048x2048-935gruik.png" 
+                <img src="https://static-00.iconduck.com/assets.00/user-avatar-1-icon-2048x2048-935gruik.png"
                   alt="User avatar"
                   className="w-10 h-10 rounded-full object-cover"
                 />
@@ -147,10 +142,7 @@ export function ChatInbox({ onClose }: ChatInboxProps) {
       </div>
       
       <div className="p-3 border-t border-surface-200">
-        <button
-          onClick={handleViewAll}
-          className="w-full py-2 text-sm text-secondary-500 hover:text-secondary-600 flex items-center justify-center gap-1"
-        >
+        <button onClick={handleViewAll} className="w-full py-2 text-sm text-secondary-500 hover:text-secondary-600 flex items-center justify-center gap-1">
           View All Messages <ChevronRight className="h-4 w-4" />
         </button>
       </div>

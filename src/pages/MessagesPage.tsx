@@ -16,12 +16,17 @@ export function MessagesPage() {
   const currentUserId = user?.id
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const scrollToBottom = () => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    };
+  
+    scrollToBottom();
   }, [messages]);
 
   useEffect(() => {
     if (!user?.id) return;
-  
     const fetchChats = async () => {
       const { data: fetchChat, error: fetchError } = await supabase
         .from('chats') 
@@ -32,7 +37,22 @@ export function MessagesPage() {
       if (fetchError) {
         console.error('Error fetching chats:', fetchError);
       } else {
-        setChats(fetchChat);
+        // Check unread messages count
+        const updatedChats = await Promise.all(
+          fetchChat.map(async (chat) => {
+            const { data: unreadMessages } = await supabase
+              .from('messages')
+              .select('id')
+              .eq('chat_id', chat.id)
+              .eq('is_read', false);
+  
+            return {
+              ...chat,
+              unreadCount: unreadMessages?.length || 0,
+            };
+          })
+        );
+        setChats(updatedChats);
       }
     };
   
@@ -44,14 +64,20 @@ export function MessagesPage() {
     const fetchMessages = async () => {
       if (!selectedChat) return;
   
+      await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('chat_id', selectedChat)
+        .eq('is_read', false);
+  
       const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
         .select('*')
         .eq('chat_id', selectedChat)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true }); 
   
       if (messagesError) {
-        console.error("Error while fetching messages:", messagesError);
+        console.error('Error while fetching messages:', messagesError);
       } else {
         setMessages(messagesData || []);
       }
@@ -107,8 +133,8 @@ export function MessagesPage() {
   
 
   return (
-    <div className="min-h-screen pt-16 bg-surface-50">
-      <div className="h-[calc(100vh-4rem)] flex">
+    <div className="pt-16 bg-surface-50">
+      <div className="h-[calc(80vh-4rem)] flex">
         {/* Chat List Sidebar */}
         <div className="w-80 border-r border-surface-200 bg-white">
           <div className="p-4 border-b border-surface-200">
@@ -141,12 +167,14 @@ export function MessagesPage() {
               >
                 <div className="relative">
                   <img
-                    src={chat?.avatar || "https://static-00.iconduck.com/assets.00/user-avatar-1-icon-2048x2048-935gruik.png" }
+                    src={chat?.avatar || 'https://static-00.iconduck.com/assets.00/user-avatar-1-icon-2048x2048-935gruik.png'}
                     alt="user avatar"
                     className="w-12 h-12 rounded-full object-cover"
                   />
-                  {chat?.unread && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-secondary-500 rounded-full border-2 border-white"></div>
+                  {chat?.unreadCount > 0 && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-secondary-500 text-white text-xs rounded-full flex items-center justify-center">
+                      {chat?.unreadCount}
+                    </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -165,7 +193,7 @@ export function MessagesPage() {
 
         {/* Chat Window */}
         {selectedChat ? (
-          <div ref={messagesEndRef} className="flex-1 flex flex-col bg-white">
+          <div className="flex-1 flex flex-col bg-white">
             {/* Chat Header */}
             <div className="p-4 border-b border-surface-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -198,7 +226,7 @@ export function MessagesPage() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -209,11 +237,12 @@ export function MessagesPage() {
                       message.sender_id === user?.id ? 'bg-secondary-500 text-white': 'bg-surface-100'
                     }`}
                   >
-                    <p>{message.message}</p>
+                    <p >{message.message}</p>
                     <p className="text-xs opacity-70 text-right mt-1">
                       {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
+
                 </div>
               ))}
             </div>
