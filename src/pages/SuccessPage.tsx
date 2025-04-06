@@ -24,8 +24,9 @@ export function SuccessPage() {
     amount: searchParams.get("totalPrice"),
     solution_id: searchParams.get("solutionId"),
     sellerId: searchParams.get("sellerId"),
+    messageId: searchParams.get("messageId"),
   };
-  console.log(data);
+
   
   const updateBooking = async () => {
     setLoading(true);
@@ -54,17 +55,43 @@ export function SuccessPage() {
             user_id: user?.id,
             subscription_id: data.sessionId,
             payment_status: data.status,
-            amount: data.amount,
+            amount: parseInt(data.amount),
             status: "pending",
-            solution_id: data.solution_id,
-            sellerId: data.sellerId
+            solution_id: parseInt(data.solution_id),
+            sellerId: data.sellerId,
+            message_id: data.messageId
           },
         ])
         .select("*");
 
       if (error) {
         console.error("Error updating booking:", error);
+        return;
       }
+
+      if (data.messageId) {
+        const { data: messageRow, error } = await supabase
+          .from("messages")
+          .select("proposal")
+          .eq("id", data.messageId)
+          .single();
+      
+        if (!error && messageRow?.proposal) {
+          messageRow.proposal.status = "paid";
+          console.log("🚀 ~ updateBooking ~ messageRow:", messageRow)
+      
+          const { error: updateError } = await supabase
+            .from("messages")
+            .update({ proposal: messageRow.proposal })
+            .eq("id", data.messageId);
+      
+          if (updateError) {
+            console.error("Failed to update proposal status:", updateError);
+          }
+        } else {
+          console.error("Failed to fetch proposal:", error);
+        }
+      }      
 
       setBookingDetail(bookingData);
     } catch (err) {

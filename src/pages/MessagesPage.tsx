@@ -1,8 +1,9 @@
 import { useState, useEffect , useRef} from 'react';
-import { Search,  ChevronLeft, Send, MessageCircle, CreditCard, Loader2, ArrowDownToLine } from 'lucide-react';
+import { Search,  ChevronLeft, Send, MessageCircle, CreditCard, Loader2, ArrowDownToLine, CheckCircle } from 'lucide-react';
 import type { ChatMessage } from '../types';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
 
 export function MessagesPage() {
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
@@ -212,6 +213,42 @@ export function MessagesPage() {
       setLoadingProposals(prev => ({ ...prev, [messageId]: false }));
     }
   };
+  const handlePayment = async (message: any) => {
+    if (!user) {
+      alert("Please login to continue");
+      return;
+    }
+  
+    try {
+      setLoadingProposals(prev => ({ ...prev, [message.id]: true }));
+
+      const response = await axios.post(
+        'https://the-new-order-platform-server.vercel.app/api/create-checkout-session',
+        {
+          uid: user?.id,
+          totalprice: message.proposal?.total_cost,
+          customerEmail: user?.email,
+          solution_id: message.id,
+          sellerId: message.sender_id,
+          messageId: message.id,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+  
+      if (response.status === 200) {
+        const { session } = response.data;
+        window.location.href = session.url;
+      }
+    } catch (error) {
+      console.error('Error during payment:', error);
+    } finally {
+      setLoadingProposals(prev => ({ ...prev, [message.id]: false }));
+    }
+  };
 
   return (
     <div className="pt-16 bg-surface-50">
@@ -331,7 +368,7 @@ export function MessagesPage() {
                               onClick={() =>
                                 message.sender_id === user.id
                                   ? handleWithdrawProposal(message.id)
-                                  : handlePayment(message.id)
+                                  : handlePayment(message)
                               }
                               disabled={loadingProposals[message.id]}
                               className="px-4 py-2 bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-300 text-white rounded-lg text-sm flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
