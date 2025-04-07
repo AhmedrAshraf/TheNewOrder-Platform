@@ -7,7 +7,7 @@ import { AuthModal } from './components/AuthModal';
 import { Footer } from './components/Footer';
 import { CookieBanner } from './components/CookieBanner';
 import { NotificationProvider } from './context/NotificationContext';
-import {AuthProvider, useAuth} from "./context/AuthContext"
+import { AuthProvider, useAuth } from "./context/AuthContext"
 import { ScrollToTop } from './components/ScrollToTop';
 import { MarketplacePage } from './pages/MarketplacePage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
@@ -23,6 +23,7 @@ import { HelpPage } from './pages/HelpPage';
 import { SuccessPage } from './pages/SuccessPage';
 import { MessagesPage } from './pages/MessagesPage';
 import { EnvCheck } from './pages/EnvCheck';
+import { OrderPage } from './pages/OrderPage';
 import { QuantumBackground } from './components/QuantumBackground';
 import type { Product, AuthState } from './types';
 import { supabase } from './lib/supabase';
@@ -107,6 +108,7 @@ function AppContent() {
           <Route path="/dashboard" element={<DashboardPage/>} />
           <Route path="/marketplace" element={<MarketplacePage />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
+          <Route path="/order/:orderId" element={<OrderPage />} />
           <Route path="/admin" element={<AdminPage/>} />
           <Route path="/admin/curation" element={<AdminCurationPage/>} />
           <Route path="/admin/users" element={<AdminUsersPage/>} />

@@ -189,7 +189,7 @@ export function DashboardPage() {
                     {purchaseOrders.map(order => (
                       console.log("order.id", order),
                       
-                      <div key={order.id} className="flex items-center justify-between p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors">
+                      <div key={order.id} className="flex items-center justify-between p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors cursor-pointer" onClick={() => navigate(`/order/${order.id}`)}>
                         <div className="flex items-center space-x-4">
                           {order?.solution.image ? (
                             <div className="w-12 h-12 rounded-lg flex items-center justify-center">
