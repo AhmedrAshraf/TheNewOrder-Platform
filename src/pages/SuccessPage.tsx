@@ -117,7 +117,8 @@ export function SuccessPage() {
       setBookingDetail(bookingData);
 
       // const response = await axios.post('http://localhost:8200/api/send-email', bookingData );
-      const response = await axios.post('https://the-new-order-platform-server.vercel.app/api/send-email', bookingData );
+      const emailData = {...bookingData, email: user?.email};
+      const response = await axios.post('https://the-new-order-platform-server.vercel.app/api/send-email', emailData );
       if (response.status === 200) {
         alert("email send successfully")
       }
