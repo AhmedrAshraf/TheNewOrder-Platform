@@ -16,7 +16,6 @@ export function SuccessPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [bookingDetail, setBookingDetail] = useState(null);
-  console.log("🚀 ~ SuccessPage ~ bookingDetail:", bookingDetail)
   const [searchParams] = useSearchParams();
 
   const data = {
@@ -29,8 +28,8 @@ export function SuccessPage() {
     messageId: searchParams.get("messageId"),
   };
 
-  const sendEmail =async () =>{
-    const response = await axios.post('http://localhost:8200/api/send-email', bookingDetail );
+  const sendEmail = async (emailData: { [key: string]: any }) => {
+    const response = await axios.post('http://localhost:8200/api/send-email', emailData );
     if (response.status === 200) {
       alert("email send successfully")
     }
@@ -114,14 +113,15 @@ export function SuccessPage() {
       }
       
   
+      // // const response = await axios.post('http://localhost:8200/api/send-email', bookingData );
+      const emailData = {...bookingData, email: user?.email};
+      // const response = await axios.post('https://the-new-order-platform-server.vercel.app/api/send-email', emailData );
+      // if (response.status === 200) {
+      //   alert("email send successfully")
+      // }
+      sendEmail(emailData)
       setBookingDetail(bookingData);
 
-      // const response = await axios.post('http://localhost:8200/api/send-email', bookingData );
-      const emailData = {...bookingData, email: user?.email};
-      const response = await axios.post('https://the-new-order-platform-server.vercel.app/api/send-email', emailData );
-      if (response.status === 200) {
-        alert("email send successfully")
-      }
 
     } catch (err) {
       console.error(err);
