@@ -191,7 +191,7 @@ export function DashboardPage() {
                   className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl mx-2"
                   >
                   <Zap className="h-5 w-5" />
-                  Submit Your First Workflow
+                  Submit Your Workflow
                 </a>
                 {solution?.length >= 1 && (
                 <a 
