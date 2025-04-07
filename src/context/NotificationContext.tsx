@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User, Notification } from '../types';
+import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
 
 // Sample notifications for demonstration
 const SAMPLE_NOTIFICATIONS: Notification[] = [
@@ -80,11 +82,100 @@ export const useNotifications = () => {
 };
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [notifications, setNotifications] = useState<Notification[]>(SAMPLE_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const { user } = useAuth();
+
+  // Fetch notifications from Supabase
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!user) return;
+
+      try {
+        // Fetch announcements
+        const { data: announcements, error: announcementsError } = await supabase
+          .from('announcements')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (announcementsError) throw announcementsError;
+
+        // Convert announcements to notifications
+        const announcementNotifications: Notification[] = announcements.map(announcement => {
+          // Check if the current user has read this announcement
+          const readBy = announcement.read_by || [];
+          const isRead = Array.isArray(readBy) && readBy.includes(user.id);
+          
+          return {
+            id: announcement.id,
+            type: 'system',
+            title: announcement.title,
+            message: announcement.message,
+            read: isRead,
+            createdAt: announcement.created_at,
+            // link: '/blog/announcements'
+          };
+        });
+
+        setNotifications(announcementNotifications);
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
+    };
+
+    fetchNotifications();
+
+    // Subscribe to real-time changes
+    const announcementsSubscription = supabase
+      .channel('announcements')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'announcements' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            // New announcement
+            const newAnnouncement = payload.new;
+            const newNotification: Notification = {
+              id: newAnnouncement.id,
+              type: 'system',
+              title: newAnnouncement.title,
+              message: newAnnouncement.message,
+              read: false,
+              createdAt: newAnnouncement.created_at,
+              // link: '/blog/announcements'
+            };
+            setNotifications(prev => [newNotification, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            // Updated announcement (e.g., read_by changes)
+            const updatedAnnouncement = payload.new;
+            setNotifications(prev => 
+              prev.map(notification => 
+                notification.id === updatedAnnouncement.id
+                  ? {
+                      ...notification,
+                      read: Array.isArray(updatedAnnouncement.read_by) && 
+                            updatedAnnouncement.read_by.includes(user?.id)
+                    }
+                  : notification
+              )
+            );
+          } else if (payload.eventType === 'DELETE') {
+            // Deleted announcement
+            const deletedAnnouncement = payload.old;
+            setNotifications(prev => 
+              prev.filter(notification => notification.id !== deletedAnnouncement.id)
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      announcementsSubscription.unsubscribe();
+    };
+  }, [user]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const addNotification = (notification: Omit<Notification, 'id' | 'createdAt' | 'read'>) => {
+  const addNotification = async (notification: Omit<Notification, 'id' | 'createdAt' | 'read'>) => {
     const newNotification: Notification = {
       ...notification,
       id: Date.now().toString(),
@@ -94,18 +185,91 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setNotifications(prev => [newNotification, ...prev]);
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev =>
-      prev.map(notification =>
-        notification.id === id ? { ...notification, read: true } : notification
-      )
-    );
+  const markAsRead = async (id: string) => {
+    if (!user) return;
+
+    try {
+      setNotifications(prev =>
+        prev.map(notification =>
+          notification.id === id ? { ...notification, read: true } : notification
+        )
+      );
+      const { data: announcement, error: fetchError } = await supabase
+        .from('announcements')
+        .select('read_by')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const readBy = announcement?.read_by || [];
+      if (!Array.isArray(readBy)) {
+        throw new Error('read_by is not an array');
+      }
+
+      if (!readBy.includes(user.id)) {
+        readBy.push(user.id);
+
+        const { error: updateError } = await supabase
+          .from('announcements')
+          .update({ read_by: readBy })
+          .eq('id', id);
+
+        if (updateError) throw updateError;
+      }
+    } catch (error) {
+      console.error('Error marking announcement as read:', error);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev =>
-      prev.map(notification => ({ ...notification, read: true }))
-    );
+  const markAllAsRead = async () => {
+    if (!user) return;
+
+    try {
+      // Update local state
+      setNotifications(prev =>
+        prev.map(notification => ({ ...notification, read: true }))
+      );
+
+      // Get all unread announcement IDs
+      const unreadIds = notifications
+        .filter(n => !n.read)
+        .map(n => n.id);
+
+      if (unreadIds.length === 0) return;
+
+      // Update each announcement's read_by array
+      for (const id of unreadIds) {
+        const { data: announcement, error: fetchError } = await supabase
+          .from('announcements')
+          .select('read_by')
+          .eq('id', id)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        // Update the read_by array
+        const readBy = announcement?.read_by || [];
+        if (!Array.isArray(readBy)) {
+          throw new Error('read_by is not an array');
+        }
+
+        // Only add the user ID if it's not already in the array
+        if (!readBy.includes(user.id)) {
+          readBy.push(user.id);
+          
+          // Save updated read_by to Supabase
+          const { error: updateError } = await supabase
+            .from('announcements')
+            .update({ read_by: readBy })
+            .eq('id', id);
+
+          if (updateError) throw updateError;
+        }
+      }
+    } catch (error) {
+      console.error('Error marking all announcements as read:', error);
+    }
   };
 
   const clearNotifications = () => {

@@ -207,19 +207,37 @@ export function AdminPage() {
     setShowAnnouncementModal(true);
   };
 
-  const handleSubmitAnnouncement = () => {
+  const handleSubmitAnnouncement = async () => {
     if (!announcementTitle.trim() || !announcementMessage.trim()) return;
 
-    addNotification({
-      type: 'system',
-      title: announcementTitle,
-      message: announcementMessage,
-      link: '/blog/announcements'
-    });
+    try {
+      // Save announcement to Supabase
+      const { data: announcement, error } = await supabase
+        .from('announcements')
+        .insert([
+          {
+            title: announcementTitle,
+            message: announcementMessage,
+            created_by: user?.id,
+            created_at: new Date().toISOString(),
+            read_by: []
+          }
+        ])
+        .select()
+        .single();
 
-    setAnnouncementTitle('');
-    setAnnouncementMessage('');
-    setShowAnnouncementModal(false);
+      if (error) throw error;
+
+      // Clear form and close modal
+      setAnnouncementTitle('');
+      setAnnouncementMessage('');
+      setShowAnnouncementModal(false);
+
+      // No need to manually add notification here as it will be handled by real-time subscription
+    } catch (error) {
+      console.error('Error creating announcement:', error);
+      // You might want to show an error message to the user here
+    }
   };
 
   const handlePaidFromAdmin = async (orderId: any) => {

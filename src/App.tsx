@@ -31,20 +31,23 @@ function AppContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOption, setFilterOption] = useState<'latest' | 'popular' | 'trending'>('popular');
-  const { setUser , user} = useAuth();
+  const { user, setUser } = useAuth();
   const navigate = useNavigate();
-  
+
 
   const handleSignOut = async () => {
-    console.log("user is logged out");
-    const { error } = await supabase.auth.signOut()
-    if(error){
-      alert("Error" + error);
+    try {
+      const { error } = await supabase.auth.signOut()
+      if(error){
+        alert("Error" + error);
+      }
+      setUser(null)
+      localStorage.removeItem('authState');
+      localStorage.removeItem('userId');
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
     }
-    setUser(null)
-    localStorage.removeItem('authState');
-    localStorage.removeItem('userId');
-    window.location.href = '/'
   };
 
   const handleUploadClick = () => {
@@ -134,11 +137,11 @@ function AppContent() {
 export default function App() {
   return (
     <Router>
-      <NotificationProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <NotificationProvider>
           <AppContent />
-        </AuthProvider>
-      </NotificationProvider>
+        </NotificationProvider>
+      </AuthProvider>
     </Router>
   );
 }
