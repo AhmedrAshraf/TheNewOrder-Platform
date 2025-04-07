@@ -1,4 +1,4 @@
-import { BarChart3, Package, DollarSign, Star, Users, TrendingUp, Zap, LayoutDashboard,  ShoppingBag, Shield } from 'lucide-react';
+import { BarChart3, Package, DollarSign, Star, Users, TrendingUp, Zap, LayoutDashboard,  ShoppingBag, Shield, LogOut } from 'lucide-react';
 import type { Product } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
@@ -154,7 +154,7 @@ export function DashboardPage() {
   console.log("products", products);
   console.log("🚀🚀 saleCount:", saleCount)
 
-  // If user has no approved products, show buyer dashboard
+// If user has no approved products, show buyer dashboard
   let hasApprovedProducts = userProducts.length > 0;
   if (hasApprovedProducts && !showSellerDashboard) {
     return (
@@ -179,6 +179,35 @@ export function DashboardPage() {
                   <p className="text-3xl font-bold text-secondary-500">${Number(totalSpent).toLocaleString()}</p>
                   <p className="text-sm text-surface-600 mt-1">Lifetime purchases</p>
                 </div>
+              </div>
+            
+              {/* Add this new section to display purchase orders */}
+              <div className="mt-8 bg-white rounded-xl p-6 border border-surface-200 shadow-card mx-auto  max-w-3xl">
+                <h2 className="text-xl font-bold mb-4">Your Purchase History</h2>
+                {purchaseOrders.length > 0 ? (
+                  <div className="space-y-4">
+                    {purchaseOrders.map(order => (
+                      console.log("order.id", order),
+                      
+                      <div onClick={()=> navigate(`/product/${order?.solution?.id}`)} key={order.id} className="flex items-center justify-between p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 rounded-lg bg-surface-200 flex items-center justify-center">
+                            <Package className="h-6 w-6 text-surface-400" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{order.solution?.title || 'Unknown Product'}</p>
+                            <p className="text-sm text-surface-600">
+                              Purchased on: {new Date(order.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <p className="font-bold">${Number(order.amount).toLocaleString()}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-surface-500 text-center py-4">No purchase history found</p>
+                )}
               </div>
               
               <div className="mt-12 bg-white rounded-xl p-8 border border-surface-200 shadow-card max-w-3xl mx-auto">
