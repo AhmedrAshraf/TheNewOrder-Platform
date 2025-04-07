@@ -191,9 +191,15 @@ export function DashboardPage() {
                       
                       <div onClick={()=> navigate(`/product/${order?.solution?.id}`)} key={order.id} className="flex items-center justify-between p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors">
                         <div className="flex items-center space-x-4">
+                          {order?.solution.image ? (
+                            <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+                              <img src={order?.solution?.image} alt="" />
+                            </div>
+                            ):(
                           <div className="w-12 h-12 rounded-lg bg-surface-200 flex items-center justify-center">
                             <Package className="h-6 w-6 text-surface-400" />
                           </div>
+                          )}
                           <div>
                             <p className="font-medium">{order.solution?.title || 'Unknown Product'}</p>
                             <p className="text-sm text-surface-600">
