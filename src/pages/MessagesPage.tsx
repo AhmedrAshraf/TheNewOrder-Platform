@@ -231,6 +231,14 @@ export function MessagesPage() {
           solution_id: message.id,
           sellerId: message.sender_id,
           messageId: message.id,
+          proposal: {
+            title: message.proposal?.title,
+            description: message.proposal?.description,
+            hours: message.proposal?.hours,
+            rate: message.proposal?.rate,
+            total_cost: message.proposal?.total_cost,
+            status: message.proposal?.status,
+          }
         },
         {
           headers: {
