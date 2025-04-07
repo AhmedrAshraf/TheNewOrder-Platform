@@ -28,10 +28,22 @@ export function SuccessPage() {
   };
 
   
+
   const updateBooking = async () => {
     setLoading(true);
+    const rawSolution = searchParams.get("solution");
+    let parsedSolution = null;
+
+  if(rawSolution){
     try {
-      // Check if the booking already exists
+      parsedSolution = JSON.parse(decodeURIComponent(rawSolution));
+      console.log("Parsed Solution: ", parsedSolution);
+    } catch (err) {
+      console.error("Error decoding solution:", err);
+    }
+  }
+  
+    try {
       const { data: existingBooking } = await supabase
         .from("orders")
         .select("*")
@@ -39,15 +51,13 @@ export function SuccessPage() {
         .eq("subscription_id", data.sessionId)
         .eq("solution_id", data.solution_id)
         .single();
-
-      // If booking exists, avoid inserting it again
+   
       if (existingBooking) {
-        console.log("Booking already exists:", existingBooking);
         setBookingDetail(existingBooking);
         setLoading(false);
         return;
       }
-
+  
       const { data: bookingData, error } = await supabase
         .from("orders")
         .insert([
@@ -59,11 +69,12 @@ export function SuccessPage() {
             status: "pending",
             solution_id: parseInt(data.solution_id),
             sellerId: data.sellerId,
-            message_id: data.messageId
+            message_id: data.messageId,
+            solution: parsedSolution, 
           },
         ])
         .select("*");
-
+  
       if (error) {
         console.error("Error updating booking:", error);
         return;
@@ -100,6 +111,7 @@ export function SuccessPage() {
       setLoading(false);
     }
   };
+  
 
   useEffect(() => {
     if (!user) {

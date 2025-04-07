@@ -5,7 +5,6 @@ import {
   Code, Database, Server, Globe, Clock, Video, MessageCircle, ChevronDown, ChevronUp,
   CheckCircle, AlertTriangle, Cpu, Star, MessageSquare
 } from 'lucide-react';
-import { loadStripe } from '@stripe/stripe-js';
 import { ChatModal } from '../components/ChatModal';
 import type { Product, AuthState, ConsultationOption } from '../types';
 import {useAuth} from "../context/AuthContext"
@@ -104,7 +103,6 @@ export function ProductDetailPage() {
   }, [id]);
 
   console.log(product?.user_id);
-
   const handlePurchase = async () => {
     if (!user) {
       setShowAuthModal(true);
@@ -119,6 +117,7 @@ export function ProductDetailPage() {
           customerEmail: user?.email,
           solution_id: product?.id,
           sellerId: product?.user_id,
+          solution: product
         },{ headers: {
           'Content-Type': 'application/json',
         }}

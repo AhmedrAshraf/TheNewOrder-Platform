@@ -1,4 +1,4 @@
-import { BarChart3, Package, DollarSign, Star, Users, TrendingUp, Zap, ShoppingBag, Shield } from 'lucide-react';
+import { BarChart3, Package, DollarSign, Star, Users, TrendingUp, Zap, LayoutDashboard,  ShoppingBag, Shield } from 'lucide-react';
 import type { Product } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
@@ -11,34 +11,52 @@ export function DashboardPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [userList, setUserList] = useState([])
+  const [solution, setSolution] = useState([])
   const [reviews, setReviews] = useState([]); 
   const [loadingReviews ,setLoadingReviews] = useState(false)
-  console.log("🚀 ~ DashboardPage ~ reviews:", reviews)
+  const [totalSpent, setTotalSpent] = useState(null)
   const navigate = useNavigate();
+  const [averageRating, setAverageRating] = useState(null)
+  const [showSellerDashboard, setShowSellerDashboard] = useState(0);
 
   useEffect(() => {
+    console.log(user?.id);
+    
     if (!user?.id) return;
   
     const fetchDashboardData = async () => {
       try {
         setLoadingProducts(true);
         setLoadingReviews(true);
-  
-        // First fetch products
+
+        // fetch solution 
+        const { data: fetchSoltuion, error: fetchSoltuionError } = await supabase
+        .from('solutions')
+        .select('')
+        .eq('user_id', user.id);
+        console.log("fetch Soltuion", fetchSoltuion);
+        
+        if (fetchSoltuionError) throw fetchSoltuionError;
+        setSolution(fetchSoltuion || []);
+        console.log("Soltuion", fetchSoltuion);
+        
+
+        // First most buying items
         const { data: productsData, error: productsError } = await supabase
-          .from('solutions')
+          .from('orders')
           .select('*')
-          .eq('user_id', user.id);
+          // .eq('user_id', user.id)
+          .limit(8);
   
         if (productsError) throw productsError;
         setProducts(productsData || []);
-  
+        
         // Then fetch reviews only if we have products
-        if (productsData && productsData.length > 0) {
+        if (fetchSoltuion && fetchSoltuion.length > 0) {
           const { data: reviewsData, error: reviewsError } = await supabase
             .from('reviews')
             .select()
-            .in('solution_id', productsData.map(p => p.id));
+            .in('solution_id', fetchSoltuion.map(p => p.id));
   
           if (reviewsError) throw reviewsError;
           setReviews(reviewsData || []);
@@ -62,6 +80,24 @@ export function DashboardPage() {
   
     fetchDashboardData();
   }, [user?.id]);
+
+
+  useEffect(() => {
+    if (reviews.length > 0) {
+      const totalRating = reviews.reduce((acc, review) => acc + review.rating, 0);
+      const avgRating = totalRating / reviews.length;
+      setAverageRating(avgRating); 
+    } else {
+      setAverageRating(0); 
+    }
+  }, [reviews]);
+
+
+  const totalSpentValue = products?.reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
+
+  useEffect(() => {
+    setTotalSpent(totalSpentValue);
+  }, [totalSpentValue]);  
 
   // Handle loading states
   if (loading || loadingProducts || loadingReviews) {
@@ -103,15 +139,24 @@ export function DashboardPage() {
     );
   }
 
-
   // Filter products - ensure this matches your data structure
-  const userProducts = products.filter(product => 
-    product?.user_id === user.id || product?.creator?.creator_id === user.id
-  );
+  const userProducts = products.filter(product => product?.user_id === user.id || product?.creator?.creator_id === user.id);
+  const purchaseOrders = products.filter(product => product?.user_id === user.id || product?.creator?.creator_id === user.id);
+  const myRecentsSale = products.filter(product => product?.sellerId === user.id );
+  const saleCount = products.filter(product => {
+    return product?.solution_id && solution.some(sol => sol.id === product.solution_id);
+  });
 
-  const hasApprovedProducts = userProducts.length > 0;
+  console.log("products", products);
+  console.log("🚀🚀 saleCount:", saleCount);
+  
+
+  console.log("products", products);
+  console.log("🚀🚀 saleCount:", saleCount)
+
   // If user has no approved products, show buyer dashboard
-  if (!hasApprovedProducts) {
+  let hasApprovedProducts = userProducts.length > 0;
+  if (hasApprovedProducts && !showSellerDashboard) {
     return (
       <div className="min-h-screen pt-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
@@ -125,13 +170,13 @@ export function DashboardPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
                 <div className="bg-white rounded-xl p-6 border border-surface-200 shadow-card">
                   <h3 className="font-medium mb-2">Purchased Solutions</h3>
-                  <p className="text-3xl font-bold text-secondary-500">0</p>
+                  <p className="text-3xl font-bold text-secondary-500">{purchaseOrders.length}</p>
                   <p className="text-sm text-surface-600 mt-1">Active workflows</p>
                 </div>
                 
                 <div className="bg-white rounded-xl p-6 border border-surface-200 shadow-card">
                   <h3 className="font-medium mb-2">Total Spent</h3>
-                  <p className="text-3xl font-bold text-secondary-500">$0</p>
+                  <p className="text-3xl font-bold text-secondary-500">${Number(totalSpent).toLocaleString()}</p>
                   <p className="text-sm text-surface-600 mt-1">Lifetime purchases</p>
                 </div>
               </div>
@@ -143,11 +188,20 @@ export function DashboardPage() {
                 </p>
                 <a 
                   href="/upload"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
-                >
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl mx-2"
+                  >
                   <Zap className="h-5 w-5" />
                   Submit Your First Workflow
                 </a>
+                {solution?.length >= 1 && (
+                <a 
+                onClick={() => setShowSellerDashboard(true)}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl mx-2"
+                >
+                  <LayoutDashboard className="h-5 w-5" />
+                  Go to seller dashboard
+                </a>
+                )}
               </div>
             </div>
           </div>
@@ -156,15 +210,14 @@ export function DashboardPage() {
   }
 
   // Seller dashboard stats
-  const totalSales = userProducts.length * 3; // Mock data: assuming 3 sales per product
-  const totalRevenue = userProducts.reduce((sum, product) => sum + (product.price * 3), 0);
-  const averageRating = 4.5; // Mock data
+  const totalSales = userProducts.length; 
+  const totalRevenue = userProducts.reduce((sum, product) => sum + Number(product.amount || 0), 0);
 
   const stats = [
-    { label: 'Total Products', value: userProducts.length, icon: Package, color: 'from-blue-500 to-blue-700' },
-    { label: 'Total Sales', value: totalSales, icon: TrendingUp, color: 'from-purple-500 to-purple-700' },
+    { label: 'Total Products', value: solution.length, icon: Package, color: 'from-blue-500 to-blue-700' },
+    { label: 'Total Sales', value: saleCount.length, icon: TrendingUp, color: 'from-purple-500 to-purple-700' },
     { label: 'Revenue', value: `$${totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'from-green-500 to-green-700' },
-    { label: 'Average Rating', value: averageRating.toFixed(1), icon: Star, color: 'from-yellow-500 to-yellow-700' },
+    { label: 'Average Rating', value: averageRating.toFixed(1), icon: Star, color: 'from-yellow-500 to-yellow-700' }, 
     { label: 'Active Users', value: userList,  icon: Users, color: 'from-pink-500 to-pink-700' }
   ];
 
@@ -204,23 +257,29 @@ export function DashboardPage() {
             <div className="bg-white rounded-xl border border-surface-200 p-6 shadow-card">
               <h2 className="text-xl font-bold mb-4 font-poppins">Recent Sales</h2>
               <div className="space-y-4">
-                {userProducts.map(product => (
-                  <div key={product.id} className="flex items-center justify-between p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors">
+                {myRecentsSale ? (
+                myRecentsSale?.map(product => (
+                  <div key={product?.id} className="flex items-center justify-between p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors">
                     <div className="flex items-center space-x-4">
-                      <img src={product.image} alt={product.title} className="w-12 h-12 rounded-lg object-cover" />
+                      <img src={product?.solution?.image || product?.solution?.files} alt={product?.solution?.title} className="w-12 h-12 rounded-lg object-cover" />
                       <div>
-                        <p className="font-medium">{product.title}</p>
-                        <p className="text-sm text-surface-600">3 sales</p>
+                        <p className="font-medium">{product?.solution?.title}</p>
+                        <p className="text-sm text-surface-600">{saleCount.length} sales</p>
+                        <p className="text-sm mt-2 text-surface-600">{new Date(product.created_at).toLocaleDateString()}</p>
                       </div>
                     </div>
-                    <p className="font-bold">${(product.price * 3).toLocaleString()}</p>
+                    <p className="font-bold">${product?.amount.toLocaleString()}</p>
                   </div>
-                ))}
+                ))
+              ):(
+                <div>
+                  <p className="text-surface-500 text-center py-4">No recents sales found</p>
+                </div>
+              )}
               </div>
             </div>
 
             <div className="bg-white rounded-xl border border-surface-200 p-6 shadow-card">
-              
               <h2 className="text-xl font-bold mb-4 font-poppins">Recent Reviews</h2>
               {reviews.length === 0 ? (
                 <p className="text-surface-500 text-center py-4">No reviews yet</p>
@@ -241,33 +300,52 @@ export function DashboardPage() {
                 </div>
                ):(
                 <div className="space-y-4">
-                  {reviews.slice(0, 5).map(review => {
-                    const product = products.find(p => p.id === review.solution_id);
-                    return (
-                      <div key={review.id} className="p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="">{product?.title || 'Unknown Product'}</p>
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star 
-                                key={i}
-                                className={`h-4 w-4 ${i < review.rating ? 'text-yellow-400' : 'text-surface-300'}`}
-                                fill={i < review.rating ? 'currentColor' : 'none'}
-                              />
-                            ))}
-                          </div>
+                {reviews.slice(0, 5).map(review => {
+                  const matchedSolution = solution.find(sol => sol.id === review.solution_id);
+
+                  return (
+                    <div key={review.id} className="p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="">{matchedSolution?.title || 'Unknown Product'}</p>
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star 
+                              key={i}
+                              className={`h-4 w-4 ${i < review?.rating ? 'text-yellow-400' : 'text-surface-300'}`}
+                              fill={i < review?.rating ? 'currentColor' : 'none'}
+                            />
+                          ))}
                         </div>
-                        <p className="font-medium mb-1">
-                          {review.comment || "No comment provided"}
-                        </p>
-                        <p className="text-surface-500">
-                          - {review.user_name || review.user?.email?.split('@')[0] || 'Anonymous'}
-                        </p>
                       </div>
-                    );
-                  })}
+                      <p className="font-medium mb-1">
+                        {review.comment || "No comment provided"}
+                      </p>
+                      <p className="text-surface-500">
+                        - {review.user_name || review.user?.email?.split('@')[0] || 'Anonymous'}
+                      </p>
+                    </div>
+                  );
+                })}
                 </div>
               )}
+            </div>
+
+            <div className="bg-white rounded-xl border border-surface-200 p-6 shadow-card">
+              <h2 className="text-xl font-bold mb-4 font-poppins">Recent Solutions</h2>
+              <div className="space-y-4">
+                {solution.map(product => (
+                  <div key={product?.id} className="flex items-center justify-between p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors">
+                    <div className="flex items-center space-x-4">
+                      <img src={product?.image} alt={product?.title} className="w-12 h-12 rounded-lg object-cover" />
+                      <div>
+                        <p className="font-medium">{product?.title}</p>
+                        <p className="text-sm text-surface-600">{myRecentsSale.length} sales</p>
+                      </div>
+                    </div>
+                    <p className="font-bold">${product?.price.toLocaleString()}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
           </div>

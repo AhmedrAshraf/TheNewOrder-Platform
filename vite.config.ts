@@ -36,7 +36,7 @@ export default defineConfig({
       'X-XSS-Protection': '1; mode=block',
       'Referrer-Policy': 'strict-origin-when-cross-origin',
       'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-      'Content-Security-Policy': "default-src 'self'; img-src 'self' https://images.unsplash.com https://graoadnysazrvqggmhfe.supabase.co https://static-00.iconduck.com data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com; connect-src 'self' http://localhost:8000 https://the-new-order-platform-server.vercel https://api.stripe.com https://the-new-order-platform-server.vercel.app/api/create-checkout-session https://js.stripe.com https://graoadnysazrvqggmhfe.supabase.co; frame-src 'self' https://the-new-order-platform-server.vercel https://js.stripe.com https://hooks.stripe.com;"
+      'Content-Security-Policy': "default-src 'self'; img-src 'self' https://images.unsplash.com https://img1.wsimg.com https://graoadnysazrvqggmhfe.supabase.co https://static-00.iconduck.com data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com; connect-src 'self' http://localhost:8000 https://the-new-order-platform-server.vercel https://api.stripe.com https://the-new-order-platform-server.vercel.app/api/create-checkout-session https://js.stripe.com https://graoadnysazrvqggmhfe.supabase.co; frame-src 'self' https://the-new-order-platform-server.vercel https://js.stripe.com https://hooks.stripe.com;"
     }
   }
 });
