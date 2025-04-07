@@ -57,7 +57,9 @@ export function SuccessPage() {
         setLoading(false);
         return;
       }
-  
+
+      const messageId = data?.messageId !== "undefined" ? data.messageId : null;
+
       const { data: bookingData, error } = await supabase
         .from("orders")
         .insert([
@@ -69,18 +71,18 @@ export function SuccessPage() {
             status: "pending",
             solution_id: parseInt(data.solution_id),
             sellerId: data.sellerId,
-            message_id: data.messageId,
-            solution: parsedSolution, 
+            message_id: messageId,
+            solution: parsedSolution,
           },
         ])
         .select("*");
   
       if (error) {
-        console.error("Error updating booking:", error);
+        console.error("Error inserting orssders:", error);
         return;
       }
 
-      if (data.messageId) {
+      if (messageId) {
         const { data: messageRow, error } = await supabase
           .from("messages")
           .select("proposal")
@@ -89,8 +91,6 @@ export function SuccessPage() {
       
         if (!error && messageRow?.proposal) {
           messageRow.proposal.status = "paid";
-          console.log("🚀 ~ updateBooking ~ messageRow:", messageRow)
-      
           const { error: updateError } = await supabase
             .from("messages")
             .update({ proposal: messageRow.proposal })
@@ -102,8 +102,11 @@ export function SuccessPage() {
         } else {
           console.error("Failed to fetch proposal:", error);
         }
-      }      
-
+      } else {
+        console.error("Message ID is missing or undefined");
+      }
+      
+  
       setBookingDetail(bookingData);
     } catch (err) {
       console.error(err);
@@ -111,6 +114,7 @@ export function SuccessPage() {
       setLoading(false);
     }
   };
+  
   
 
   useEffect(() => {
