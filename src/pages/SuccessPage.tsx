@@ -9,12 +9,14 @@ import {
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
+import axios from "axios"
 
 export function SuccessPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [bookingDetail, setBookingDetail] = useState(null);
+  console.log("🚀 ~ SuccessPage ~ bookingDetail:", bookingDetail)
   const [searchParams] = useSearchParams();
 
   const data = {
@@ -27,7 +29,12 @@ export function SuccessPage() {
     messageId: searchParams.get("messageId"),
   };
 
-  
+  const sendEmail =async () =>{
+    const response = await axios.post('http://localhost:8200/api/send-email', bookingDetail );
+    if (response.status === 200) {
+      alert("email send successfully")
+    }
+  }
 
   const updateBooking = async () => {
     setLoading(true);
@@ -108,6 +115,13 @@ export function SuccessPage() {
       
   
       setBookingDetail(bookingData);
+
+      // const response = await axios.post('http://localhost:8200/api/send-email', bookingData );
+      const response = await axios.post('https://the-new-order-platform-server.vercel.app/api/send-email', bookingData );
+      if (response.status === 200) {
+        alert("email send successfully")
+      }
+
     } catch (err) {
       console.error(err);
     } finally {
@@ -231,6 +245,7 @@ export function SuccessPage() {
                 <ArrowRight className="h-5 w-5" />
                 Back to Marketplace
               </button>
+              {/* <button onClick={sendEmail}>sendEmail</button> */}
             </div>
 
             <div className="mt-8 pt-8 border-t border-surface-200">
