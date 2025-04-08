@@ -27,6 +27,7 @@ import { OrderPage } from './pages/OrderPage';
 import { QuantumBackground } from './components/QuantumBackground';
 import type { Product, AuthState } from './types';
 import { supabase } from './lib/supabase';
+import ManagePayouts from "./pages/ManagePayouts"
 
 function AppContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -105,6 +106,7 @@ function AppContent() {
             </>
           } />
           <Route path="/upload" element={<UploadPage />} />
+          <Route path="/managePayouts" element={<ManagePayouts />} />
           <Route path="/dashboard" element={<DashboardPage/>} />
           <Route path="/marketplace" element={<MarketplacePage />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />

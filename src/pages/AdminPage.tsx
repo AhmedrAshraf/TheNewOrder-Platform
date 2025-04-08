@@ -28,25 +28,6 @@ export function AdminPage() {
   const [newOrderCompleted, setNewOrderCompleted] = useState(null)
   const [pendingOrders, setPendingOrders] = useState([]);
   const [solutionsData, setSolutionsData] = useState([]);
-  const [pendingPayments, setPendingPayments] = useState([])
-
-  const calculatePendingPayments = () => {
-    try {
-      const sum = pendingOrders.reduce((total, order) => {
-        const amount = parseFloat(order?.amount) || 0;
-        return total + amount;
-      }, 0);
-    
-      setPendingPayments(sum.toFixed(2));
-    } catch (error) {
-      console.error('Error calculating pending payments:', error);
-      setPendingPayments('0.00');
-    }
-  };
-  
-  useEffect(() => {
-    calculatePendingPayments();
-  }, [pendingOrders]);
   
   useEffect(() => {
     const fetchUser = async () => {
@@ -291,17 +272,12 @@ export function AdminPage() {
       </div>
     );
   }
-  const formattedAmount = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(parseFloat(pendingPayments));
-
   const stats = [
     { label: 'Total Users', value: users.length, icon: Users, change: '+12%', color: 'from-blue-500 to-blue-700' },
     { label: 'Total Solutions', value: solution, icon: Package, change: '+8%', color: 'from-purple-500 to-purple-700' },
     { label: 'Revenue', value: '$48,290', icon: DollarSign, change: '+24%', color: 'from-green-500 to-green-700' },
     { label: 'Pending Reviews', value: pendingList, icon: Clock, change: '-3%', color: 'from-yellow-500 to-yellow-700' },
-    { label: 'Pending Payments', value: formattedAmount, icon: CreditCard, change: '-3%', changeType: 'negative', color: 'from-red-500 to-red-600',link: '/admin/payments'}
+    { label: 'Pending Payments', value: pendingOrders.length, icon: CreditCard, change: '-3%', changeType: 'negative', color: 'from-red-500 to-red-600',link: '/admin/payments'}
   ];
   return (
     <div className="min-h-screen bg-white">

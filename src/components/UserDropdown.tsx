@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Settings, LogOut, LogIn, UserPlus, Shield, HelpCircle } from 'lucide-react';
+import { User, Settings, LogOut, LogIn, UserPlus, Shield, HelpCircle , Wallet } from 'lucide-react';
 import type { AuthState } from '../types';
 import { useAuth } from '../context/AuthContext';
 
@@ -83,9 +83,16 @@ export function UserDropdown({onSignOut, onAuthClick }: UserDropdownProps) {
                 <button
                   onClick={() => handleNavigation('/dashboard')}
                   className="w-full text-left px-4 py-2 hover:bg-surface-50 flex items-center space-x-3"
-                >
+                 >
                   <User className="h-4 w-4 text-surface-400" />
                   <span>Dashboard</span>
+                </button>
+                <button
+                  onClick={() => handleNavigation('/managePayouts')}
+                  className="w-full text-left px-4 py-2 hover:bg-surface-50 flex items-center space-x-3"
+                 >
+                  <Wallet  className="h-4 w-4 text-surface-400" />
+                  <span>Managing payouts payment</span>
                 </button>
                 <button
                   onClick={() => handleNavigation('/settings')}
