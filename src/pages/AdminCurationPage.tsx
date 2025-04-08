@@ -348,7 +348,7 @@ const rejectWorkflow = async (id: string) => {
                         <div>
                           <p className="text-surface-600 text-sm">Submitted On</p>
                           <p className="font-medium">
-                            {new Date(selectedWorkflow.submittedAt).toLocaleDateString()}
+                            {new Date(selectedWorkflow.created_at).toLocaleDateString()}
                           </p>
                         </div>
                         <div>
@@ -356,7 +356,7 @@ const rejectWorkflow = async (id: string) => {
                           <p className="font-medium">${selectedWorkflow.price}</p>
                         </div>
                         <div>
-                          <p className="text-surface-600 text-sm">Rating</p>
+                          {/* <p className="text-surface-600 text-sm">Rating</p>
                           <div className="flex items-center mt-1">
                             {[...Array(5)].map((_, i) => (
                               <Star
@@ -366,7 +366,7 @@ const rejectWorkflow = async (id: string) => {
                               />
                             ))}
                             <span className="ml-2 text-sm">4.0</span>
-                          </div>
+                          </div> */}
                         </div>
                       </div>
                     </div>

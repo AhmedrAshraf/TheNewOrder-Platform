@@ -155,7 +155,7 @@ export function MarketplacePage() {
       const { data, error } = await supabase
       .from('solutions')
       .select()
-      // .eq('status', 'approved')
+      .eq('status', 'approved')
 
       if(error){
         console.error("error while fetching solutions", error);

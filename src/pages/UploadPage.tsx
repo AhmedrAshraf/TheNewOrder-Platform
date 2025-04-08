@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, X, ArrowRight, CheckCircle, Clock, Video, Code, Database, Globe, Server } from 'lucide-react';
+import {Loader2, Plus, Upload, X, ArrowRight, CheckCircle, Clock, Video, FolderOpen,  Code, Download, Database, Globe, Server } from 'lucide-react';
 import type { Product } from '../types';
 import {useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -7,19 +7,23 @@ import { useAuth } from '../context/AuthContext';
 
 export function UploadPage() {
   const [dragActive, setDragActive] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
-  console.log("files", files);
-  
   const [currentStep, setCurrentStep] = useState(1);
   const [newRequirement, setNewRequirement] = useState('');
   const [newIntegration, setNewIntegration] = useState('');
   const [showRequirementInput, setShowRequirementInput] = useState(false);
   const [showIntegrationInput, setShowIntegrationInput] = useState(false);
+  const [bluePrint, setBluePrint] = useState(false)
   const requirementInputRef = useRef<HTMLInputElement>(null);
   const integrationInputRef = useRef<HTMLInputElement>(null);
   const {user} = useAuth() 
+  const [image , setImage] = useState(null)
+  const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null); 
+  const [zipUrl, setZipUrl] = useState<string | null>(null);
+  const [videoLoading, setVideoLoading] = useState(false)
   const navigate = useNavigate();
-
+  const [loading, setLoading] = useState(false)
+  const [demoVideo, setDemoVideo] = useState(null)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -27,7 +31,7 @@ export function UploadPage() {
     category: 'automation' as Product['category'],
     tags: '',
     image: '',
-    videoUrl: '',
+    bluePrint: '',
     complexity: 'medium' as 'beginner' | 'medium' | 'advanced',
     integrations: [] as string[],
     requirements: [] as string[],
@@ -36,8 +40,8 @@ export function UploadPage() {
     consultationAvailable: false,
     consultationRate: '',
     status: 'pending',
+    demoVideo: ''
   });
-  console.log("formData", formData.image);
   
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -49,9 +53,23 @@ export function UploadPage() {
     }
   };
 
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    droppedFiles.forEach(async (file) => {
+      const uploadImages = await uploadImage(file);
+      if (uploadImages) {
+        setFormData(prev => ({...prev,image: uploadImages}));
+      }
+    });
+  };
+
   const uploadImage = async (file: File): Promise<string | null> => {
     const dotIndex = file.name.lastIndexOf('.');
-    const fileName = `files/${user?.id}/${file.name.substring(0, dotIndex)}${Date.now()}${file.name.substring(dotIndex)}`;
+    const fileName = `thumbnail/${user?.id}/${file.name.substring(0, dotIndex)}${Date.now()}${file.name.substring(dotIndex)}`;
     console.log("fileName", fileName);
   
     const { error } = await supabase.storage
@@ -66,44 +84,130 @@ export function UploadPage() {
     const { data: publicURL, error: urlError } = await supabase.storage
       .from('solutions-images')
       .getPublicUrl(fileName);
+      
+      if (urlError) {
+        console.error('Error getting public URL:', urlError);
+        return null;
+      }
+      
+    setImage(publicURL.publicUrl)
+    return publicURL.publicUrl;
+  };
+  const sanitizeFileName = (name: string) => {
+    return name
+      .replace(/[^a-zA-Z0-9.\-_]/g, '_');
+  };
+
+  const uploadBluePrint = async (file: File) =>{
+    const dotIndex = file.name.lastIndexOf('.');
+    const rawName = file.name.substring(0, dotIndex);
+    const extension = file.name.substring(dotIndex);
+    console.log("🚀~ extension:", extension)
+    
+    const safeName = sanitizeFileName(rawName);
+    const fileName = `bluePrint/${user?.id}/${safeName}_${Date.now()}${extension}`;
+    try{
+      setLoading(true)
+      const { error } = await supabase.storage
+      .from('solutions-images')
+      .upload(fileName, file);
   
-    if (urlError) {
-      console.error('Error getting public URL:', urlError);
+    if (error) {
+      console.error('Error uploading image:', error);
       return null;
     }
   
-    return publicURL.publicUrl;
-  };
-  
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    droppedFiles.forEach(async (file) => {
-      const uploadImages = await uploadImage(file);
-      if (uploadImages) {
-        setFiles(prev => [...prev, file]);
-        setFormData(prev => ({...prev,image: uploadImages}));
+    const { data: publicURL, error: urlError } = await supabase.storage
+      .from('solutions-images')
+      .getPublicUrl(fileName);
+      
+      if (urlError) {
+        console.error('Error getting public URL:', urlError);
+        return null;
       }
-    });
-  };
+      
+      if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(extension)) {
+        setThumbnail(publicURL.publicUrl);
+        console.log("thumbnail");
+      } else if (['.mp4', '.mov', '.webm'].includes(extension)) {
+        setVideoUrl(publicURL.publicUrl);
+        console.log("mov");
+      } else if (extension === '.zip') {
+        setZipUrl(publicURL.publicUrl);
+        console.log("zip");
+      } else {
+        console.warn("Unsupported file type");
+      }
+    return publicURL.publicUrl;
+    }catch(error){
+      console.log("Error", error);
+    }finally{
+      setLoading(false)
+    }
+  }
 
-  const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadDemoVideo = async (file: file) =>{
+      const dotIndex = file.name.lastIndexOf('.');
+      const rawName = file.name.substring(0, dotIndex);
+      const extension = file.name.substring(dotIndex);
+      
+      const safeName = sanitizeFileName(rawName);
+      const fileName = `demoVideo/${user?.id}/${safeName}_${Date.now()}${extension}`;
+      try{
+        setVideoLoading(true)
+        const { error } = await supabase.storage
+        .from('solutions-images')
+        .upload(fileName, file);
+    
+      if (error) {
+        console.error('Error uploading image:', error);
+        return null;
+      }
+    
+      const { data: publicURL, error: urlError } = await supabase.storage
+        .from('solutions-images')
+        .getPublicUrl(fileName);
+        
+        if (urlError) {
+          console.error('Error getting public URL:', urlError);
+          return null;
+        }
+        setDemoVideo(file.name)
+        return publicURL.publicUrl;
+      }
+      catch(error){
+        console.log("Error", error);
+      }
+      finally{
+        setVideoLoading(false)
+      }
+  }
+
+
+  const handleFileInput = async (type: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("type", type);
+    
     if (e.target.files) {
-      const uploadImages = await uploadImage(e.target.files[0]);
-      if (uploadImages) {
-        setFiles(prev => [...prev, e.target.files[0]]);
-        setFormData(prev => ({...prev,image: uploadImages}));
+      if(type === 'thumbnail'){
+        const uploadImages = await uploadImage(e.target.files[0]);
+        if (uploadImages) {
+          setFormData(prev => ({...prev,image: uploadImages}));
+        }
+      }else if(type === 'bluePrint'){
+        const uploadBluePrintImage = await uploadBluePrint(e.target.files[0]);
+        if (uploadBluePrintImage) {
+          setBluePrint(true); 
+          setFormData(prev => ({ ...prev, bluePrint: uploadBluePrintImage }));
+        }
+      }
+      else if(type === 'demoVideo'){
+        const uploadVideo = await uploadDemoVideo(e.target.files[0]);
+        if (uploadVideo) {
+          setFormData(prev => ({ ...prev, demoVideo: uploadVideo }));
+        }
       }
     }
   };
-
-  const removeFile = (index: number) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
-  };
-  console.log("faq", formData.faq);
   
   const handleSubmit = async (e: React.FormEvent) => {
     console.log("handle Submit function called", formData);
@@ -128,6 +232,8 @@ export function UploadPage() {
         status: formData.status,
         creator: {creator_name: user?.name, creator_id: user.id},
         image: formData.image,
+        bluePrint: formData.bluePrint ,
+        demoVideo: formData.demoVideo
       }
     ])
 
@@ -523,74 +629,160 @@ export function UploadPage() {
                 </div>
               )}
             </div>
-            
-            <div
-              className={`border-2 border-dashed rounded-xl p-8 text-center bg-white ${
-                dragActive ? 'border-secondary-500 bg-secondary-500/5' : 'border-surface-200'
-              }`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-            >
-              <Upload className="mx-auto h-12 w-12 text-surface-400 mb-4" />
-              <p className="text-lg mb-2 font-medium">Drag and drop your files here</p>
-              <p className="text-sm text-surface-500 mb-4">or</p>
-              <label className="inline-block">
-                <span className="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg cursor-pointer transition-all duration-200 shadow-lg hover:shadow-xl">
-                  Browse Files
-                </span>
+
+          <div className='grid grid-cols-2 gap-5 justify-center items-center'>
+            {loading ? (
+              <div className='flex gap-2 justify-center items-center border-surface-200'>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Processing...</span>
+              </div>
+            ):(
+            bluePrint ? (
+              <div className='rounded-xl'>
+                <>
+                {thumbnail && (
+                  <div className="mb-4">
+                    <p className="text-sm font-medium mb-2">Thumbnail:</p>
+                    <img src={thumbnail} className="rounded-lg w-full h-auto" />
+                  </div>
+                )}
+                {videoUrl && (
+                  <div className="flex flex-col items-center  h-full justify-center p-6 bg-surface-50 rounded-lg border border-surface-200">
+                    <FolderOpen className="w-12 h-12 text-green-500 mb-2" />
+                    <p className="font-medium text-surface-700 mt-2 text-center">{videoUrl.split('/').pop()}</p>
+                    <p className="text-sm text-surface-500 my-5">Your video has been uploaded</p>
+                  </div>
+                )}
+                {zipUrl && (
+                  <div>
+                    <div className="flex flex-col items-center bg-blue-50 h-full justify-center p-6 rounded-lg border border-surface-200">
+                      <p className="text-sm font-medium mb-2">ZIP File:</p>
+                      <FolderOpen className="w-12 h-12 text-blue-500 mb-2" />
+                      <p className="font-medium text-surface-700 mt-2 text-center">{zipUrl.split('/').pop()}</p>
+                      <p className="text-sm text-surface-500 my-4">Your video has been uploaded</p>
+                    </div>
+                  </div>
+                )}
+                </>
+                </div>
+              ) :(
+              <div
+                className={`border-2 border-dashed rounded-xl p-8 text-center bg-white ${
+                  dragActive ? 'border-secondary-500 bg-secondary-500/5' : 'border-surface-200'
+                }`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
+                <Upload className="mx-auto h-12 w-12 text-surface-400 mb-4" />
+                <p className="text-lg mb-2 font-medium">Upload Solution Blue print</p>
+                <p className="text-sm text-surface-500 mb-4">or</p>
+                <label className="inline-block">
+                  <span className="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg cursor-pointer transition-all duration-200 shadow-lg hover:shadow-xl">
+                    Browse Files
+                  </span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    multiple
+                    onChange={(e) => handleFileInput('bluePrint', e)}
+                    />
+                </label>
+              </div>
+            )
+          )}
+
+            {/* thumbnail */}
+            {image ? (
+              <div className='border rounded-xl'>
+                <img className='rounded-xl' src={image} alt="thumbnail" />
+              </div> 
+              ):(
+              <div
+                className={`border-2 border-dashed rounded-xl p-8 text-center bg-white ${
+                  dragActive ? 'border-secondary-500 bg-secondary-500/5' : 'border-surface-200'
+                }`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
+                <Upload className="mx-auto h-12 w-12 text-surface-400 mb-4" />
+                <p className="text-lg mb-2 font-medium">Upload thumbnail</p>
+                <p className="text-sm text-surface-500 mb-4">or</p>
+                <label className="inline-block">
+                  <span className="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg cursor-pointer transition-all duration-200 shadow-lg hover:shadow-xl">
+                    Browse Files
+                  </span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    multiple
+                    onChange={(e)=> handleFileInput('thumbnail', e)}
+                  />
+                </label>
+
+              </div>
+              )}
+          </div>
+
+          {videoLoading ? (
+             <div className='flex gap-2 my-5 justify-center items-center border-surface-200'>
+             <Loader2 className="h-4 w-4 animate-spin" />
+             <span>Uploading video...</span>
+           </div>
+          ):(
+            demoVideo ? (
+                <div className="border-2 border-dashed border-indigo-500 p-2 rounded-md bg-indigo-100 text-indigo-600 group-hover:bg-indigo-200 group-hover:text-indigo-700 transition-colors duration-300">
+                  <p>{demoVideo}</p>
+                </div>
+            ):(
+            <div className="border-2 border-dashed border-indigo-500 rounded-xl p-8 flex flex-col justify-center items-center gap-4 bg-white/50 hover:bg-indigo-50/80 transition-all duration-300 cursor-pointer text-center group"
+
+              >
+              <label htmlFor='video' className="inline-block">
+                <div className="p-4 w-max mx-auto rounded-full bg-indigo-100 text-indigo-600 group-hover:bg-indigo-200 group-hover:text-indigo-700 transition-colors duration-300">
+                  <Plus className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-1">Upload Explainer Video</h3>
+                  <p className="text-sm text-gray-500">MP4, WebM or MOV. Max 100MB.</p>
+                </div>
                 <input
+                  id='video'
                   type="file"
                   className="hidden"
                   multiple
-                  onChange={handleFileInput}
+                  onChange={(e) => handleFileInput('demoVideo', e)}
                 />
               </label>
             </div>
+            )
+          )}
 
-            <div className="mt-4 bg-surface-50 p-4 rounded-lg border-2 border-dashed border-surface-200">
-              <p className="text-sm font-medium text-surface-900 mb-2">Required Files:</p>
-              <ul className="text-sm text-surface-600 space-y-2">
-                <li className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-secondary-500"></div>
-                  <span>The complete blueprint (JSON, template file, Git)</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-secondary-500"></div>
-                  <span>How to documentation (PDF)</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-secondary-500"></div>
-                  <span>Explainer video</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-secondary-500"></div>
-                  <span>Additional thumbnail and visuals</span>
-                </li>
-              </ul>
-            </div>
-            
-            {files.length > 0 && (
-              <div className="space-y-2">
-                {files.map((file, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between bg-white p-3 rounded-xl border border-surface-200"
-                  >
-                    <span className="truncate">{file.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(index)}
-                      className="text-surface-400 hover:text-surface-600"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            
+          <div className="mt-4 bg-surface-50 p-4 rounded-lg border-2 border-dashed border-surface-200">
+            <p className="text-sm font-medium text-surface-900 mb-2">Required Files:</p>
+            <ul className="text-sm text-surface-600 space-y-2">
+              <li className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-secondary-500"></div>
+                <span>The complete blueprint (JSON, template file, Git)</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-secondary-500"></div>
+                <span>How to documentation (PDF)</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-secondary-500"></div>
+                <span>Explainer video</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-secondary-500"></div>
+                <span>Additional thumbnail and visuals</span>
+              </li>
+            </ul>
+          </div>
+        
             <div className="pb-24">
               <button
                 type="submit"
@@ -664,21 +856,6 @@ export function UploadPage() {
                     </div>
                   </div>
                 )}
-                
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="col-span-1 text-surface-500">Files</div>
-                  <div className="col-span-2">
-                    {files.length > 0 ? (
-                      <ul className="list-disc list-inside">
-                        {files.map((file, index) => (
-                          <li key={index}>{file.name}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <span className="text-surface-400">No files uploaded</span>
-                    )}
-                  </div>
-                </div>
               </div>
             </div>
             

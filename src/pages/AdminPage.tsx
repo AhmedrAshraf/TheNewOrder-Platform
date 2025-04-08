@@ -158,7 +158,6 @@ export function AdminPage() {
       // Fetch proposal details for orders without solution_id but with message_id
       const ordersWithProposals = await Promise.all(
         ordersData.map(async (order) => {
-          console.log("🚀 ~ ordersData.map ~ order:", order)
           if (!order.solution_id && order.message_id) {
             const { data: messageData, error: messageError } = await supabase
               .from("messages")
