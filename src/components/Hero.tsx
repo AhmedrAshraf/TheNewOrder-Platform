@@ -3,6 +3,7 @@ import { Sparkles, Zap, Shield, Layers, Rocket, Code, Bot, Cpu, Lock, Clock, Awa
 import { ProductCard } from './ProductCard';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import {QuantumBackground} from "./QuantumBackground"
 
 interface HeroProps {
   onUploadClick: () => void;
@@ -84,6 +85,7 @@ fetchProduct();
   return (
     <>
       <div className="relative overflow-hidden bg-white mt-16 md:mt-20">
+          <QuantumBackground intensity="high" className="fixed inset-0 pointer-events-none" overlay={false} />
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-28">
           <div className="text-center">
