@@ -18,8 +18,7 @@ export function UploadPage() {
   const {user} = useAuth() 
   const [image , setImage] = useState(null)
   const [thumbnail, setThumbnail] = useState<string | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null); 
-  const [zipUrl, setZipUrl] = useState<string | null>(null);
+  const [file, setFile] = useState(null)
   const [videoLoading, setVideoLoading] = useState(false)
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false)
@@ -129,14 +128,8 @@ export function UploadPage() {
       if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(extension)) {
         setThumbnail(publicURL.publicUrl);
         console.log("thumbnail");
-      } else if (['.mp4', '.mov', '.webm'].includes(extension)) {
-        setVideoUrl(publicURL.publicUrl);
-        console.log("mov");
-      } else if (extension === '.zip') {
-        setZipUrl(publicURL.publicUrl);
-        console.log("zip");
       } else {
-        console.warn("Unsupported file type");
+        setFile(publicURL.publicUrl);
       }
     return publicURL.publicUrl;
     }catch(error){
@@ -157,8 +150,9 @@ export function UploadPage() {
         setVideoLoading(true)
         const { error } = await supabase.storage
         .from('solutions-images')
-        .upload(fileName, file);
-    
+        .upload(fileName, file, {
+          contentType: 'video/quicktime', 
+        });    
       if (error) {
         console.error('Error uploading image:', error);
         return null;
@@ -230,7 +224,7 @@ export function UploadPage() {
         consultationAvailable: formData.consultationAvailable,
         consultationRate: consultationRateValue,
         status: formData.status,
-        creator: {creator_name: user?.name, creator_id: user.id},
+        creator: {creator_name: user?.name, creator_id: user.id, creator_title: user?.title, creator_bio: user?.bio},
         image: formData.image,
         bluePrint: formData.bluePrint ,
         demoVideo: formData.demoVideo
@@ -442,6 +436,7 @@ export function UploadPage() {
                   placeholder="Set your price"
                   required
                 />
+                  <p className="text-xs text-surface-500 mt-1">Note: 5% of the order amount will be deducted as a platform fee.</p>
               </div>
               
               <div className="mt-6">
@@ -646,21 +641,11 @@ export function UploadPage() {
                     <img src={thumbnail} className="rounded-lg w-full h-auto" />
                   </div>
                 )}
-                {videoUrl && (
+                {file && (
                   <div className="flex flex-col items-center  h-full justify-center p-6 bg-surface-50 rounded-lg border border-surface-200">
                     <FolderOpen className="w-12 h-12 text-green-500 mb-2" />
-                    <p className="font-medium text-surface-700 mt-2 text-center">{videoUrl.split('/').pop()}</p>
-                    <p className="text-sm text-surface-500 my-5">Your video has been uploaded</p>
-                  </div>
-                )}
-                {zipUrl && (
-                  <div>
-                    <div className="flex flex-col items-center bg-blue-50 h-full justify-center p-6 rounded-lg border border-surface-200">
-                      <p className="text-sm font-medium mb-2">ZIP File:</p>
-                      <FolderOpen className="w-12 h-12 text-blue-500 mb-2" />
-                      <p className="font-medium text-surface-700 mt-2 text-center">{zipUrl.split('/').pop()}</p>
-                      <p className="text-sm text-surface-500 my-4">Your video has been uploaded</p>
-                    </div>
+                    <p className="font-medium text-surface-700 mt-2 text-center">{file.split('/').pop()}</p>
+                    <p className="text-sm text-surface-500 my-5">Your file has been uploaded</p>
                   </div>
                 )}
                 </>

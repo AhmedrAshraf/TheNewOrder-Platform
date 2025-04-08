@@ -110,6 +110,7 @@ export function ProductDetailPage() {
     } else {
       console.log("working");
       try {
+        setIsLoading(true)
         // const response = await axios.post('http://localhost:8000/api/create-checkout-session', {
         const response = await axios.post('https://the-new-order-platform-server.vercel.app/api/create-checkout-session', {
           uid: user?.id,
@@ -130,6 +131,8 @@ export function ProductDetailPage() {
         }
       } catch (error) {
         console.error("Error during purchase:", error);
+      }finally{
+        setIsLoading(true)
       }
     }
   };
@@ -432,15 +435,24 @@ export function ProductDetailPage() {
                       </ul>
                     </div>
                     
+                    {product?.demoVideo && (
                     <div className="mb-8">
                       <h2 className="text-xl font-semibold mb-3 text-surface-900">Demo Video</h2>
                       <div className="aspect-video bg-surface-100 rounded-lg flex items-center justify-center">
-                        <Video className="h-12 w-12 text-surface-400" />
+                        {/* <Video className="h-12 w-12 text-surface-400" /> */}
+                        <video 
+                        src={product?.demoVideo} 
+                        controls 
+                        className="w-full h-full rounded-lg"
+                        >
+                        Your browser does not support the video tag.
+                      </video>
                       </div>
                       <p className="text-sm text-surface-500 mt-2">
                         Watch a quick demo of how this tool works and its main features.
                       </p>
                     </div>
+                    )}
                     
                     <div>
                       <h2 className="text-xl font-semibold mb-3 text-surface-900">Tags</h2>

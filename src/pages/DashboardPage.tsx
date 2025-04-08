@@ -1,4 +1,4 @@
-import { BarChart3, Package, DollarSign, Star, Users, TrendingUp, Zap, LayoutDashboard,  ShoppingBag, Shield, LogOut } from 'lucide-react';
+import { BarChart3, Package, DollarSign, Star, Filter, Check, Calendar, Users, TrendingUp, Zap, LayoutDashboard,  ShoppingBag, Shield, LogOut } from 'lucide-react';
 import type { Product } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
@@ -20,9 +20,8 @@ export function DashboardPage() {
   const [showSellerDashboard, setShowSellerDashboard] = useState(0);
 
   useEffect(() => {
-    console.log(user?.id);
-    
     if (!user?.id) return;
+    console.log("user?.id", user?.id)
   
     const fetchDashboardData = async () => {
       try {
@@ -140,25 +139,16 @@ export function DashboardPage() {
   }
 
   // Filter products - ensure this matches your data structure
-  const userProducts = products.filter(product => product?.user_id === user.id || product?.creator?.creator_id === user.id);
+  const userProducts = products.filter(product =>{ return product?.user_id === user.id || product?.creator?.creator_id === user.id});
   const purchaseOrders = products.filter(product => product?.user_id === user.id || product?.creator?.creator_id === user.id);
   const myRecentsSale = products.filter(product => product?.sellerId === user.id );
-  const saleCount = products.filter(product => {
-    return product?.solution_id && solution.some(sol => sol.id === product.solution_id);
-  });
-
-  console.log("products", products);
-  console.log("🚀🚀 saleCount:", saleCount);
-  
-
-  console.log("products", products);
-  console.log("🚀🚀 saleCount:", saleCount)
+  const saleCount = products.filter(product => product?.solution_id && solution.some(sol => sol.id === product.solution_id));
 
 // If user has no approved products, show buyer dashboard
   let hasApprovedProducts = userProducts.length > 0;
   if (hasApprovedProducts && !showSellerDashboard) {
     return (
-      <div className="min-h-screen pt-20 bg-white">
+      <div className="min-h-screen py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
             <div className="text-center mb-12">
               <ShoppingBag className="h-16 w-16 text-surface-400 mx-auto mb-4" />
@@ -187,8 +177,6 @@ export function DashboardPage() {
                 {purchaseOrders.length > 0 ? (
                   <div className="space-y-4">
                     {purchaseOrders.map(order => (
-                      console.log("order.id", order),
-                      
                       <div key={order.id} className="flex items-center justify-between p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors cursor-pointer" onClick={() => navigate(`/order/${order.id}`)}>
                         <div className="flex items-center space-x-4">
                           {order?.solution.image ? (
@@ -246,7 +234,9 @@ export function DashboardPage() {
 
   // Seller dashboard stats
   const totalSales = userProducts.length; 
-  const totalRevenue = userProducts.reduce((sum, product) => sum + Number(product.amount || 0), 0);
+  const totalRevenue = myRecentsSale.reduce((sum, product) => sum + Number(product.amount || 0), 0);
+  console.log("🚀~ totalRevenue:", totalRevenue)
+  console.log("userProducts", userProducts);
 
   const stats = [
     { label: 'Total Products', value: solution.length, icon: Package, color: 'from-blue-500 to-blue-700' },
@@ -257,7 +247,7 @@ export function DashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen pt-20 bg-white">
+    <div className="min-h-screen py-20 bg-white">
       <div className="relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="flex items-center justify-between mb-8">
@@ -292,8 +282,8 @@ export function DashboardPage() {
             <div className="bg-white rounded-xl border border-surface-200 p-6 shadow-card">
               <h2 className="text-xl font-bold mb-4 font-poppins">Recent Sales</h2>
               <div className="space-y-4">
-                {myRecentsSale ? (
-                myRecentsSale?.map(product => (
+                {myRecentsSale && myRecentsSale.length >= 1 ? (
+                 myRecentsSale?.map(product => (
                   <div key={product?.id} className="flex items-center justify-between p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors">
                     <div className="flex items-center space-x-4">
                       <img src={product?.solution?.image || product?.solution?.files} alt={product?.solution?.title} className="w-12 h-12 rounded-lg object-cover" />
@@ -366,23 +356,78 @@ export function DashboardPage() {
             </div>
 
             <div className="bg-white rounded-xl border border-surface-200 p-6 shadow-card">
-              <h2 className="text-xl font-bold mb-4 font-poppins">Recent Solutions</h2>
-              <div className="space-y-4">
-                {solution.map(product => (
-                  <div key={product?.id} className="flex items-center justify-between p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors">
-                    <div className="flex items-center space-x-4">
-                      <img src={product?.image} alt={product?.title} className="w-12 h-12 rounded-lg object-cover" />
-                      <div>
-                        <p className="font-medium">{product?.title}</p>
-                        <p className="text-sm text-surface-600">{myRecentsSale.length} sales</p>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold font-poppins">Recent Solutions</h2>
+                <div className="flex items-center space-x-2">
+                  <Filter className="h-4 w-4 text-surface-400" />
+                  <span className="text-sm text-surface-500">Filter</span>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {solution.map((product) => (
+                  <div
+                    key={product?.id}
+                    className="flex items-center justify-between p-4 bg-surface-50 rounded-lg border border-surface-100 hover:border-surface-200 transition-all"
+                  >
+                    <div className="flex items-center space-x-4 flex-1 min-w-0">
+                      <div className="relative">
+                        <img
+                          src={product?.image}
+                          alt={product?.title}
+                          className="w-14 h-14 rounded-lg object-cover"
+                        />
+                        {product?.status === "approved" && (
+                          <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-0.5">
+                            <Check className="h-3 w-3 text-white" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{product?.title}</p>
+                        <div className="flex items-center space-x-3 mt-1">
+                          <div className="flex items-center space-x-1 text-sm text-surface-500">
+                            <ShoppingBag className="h-3 w-3" />
+                            <span>{myRecentsSale.length} sales</span>
+                          </div>
+                          <div className="flex items-center space-x-1 text-sm text-surface-500">
+                            <Calendar className="h-3 w-3" />
+                            <span>
+                              {new Date(product?.created_at).toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                }
+                              )}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <p className="font-bold">${product?.price.toLocaleString()}</p>
+
+                    <div className="flex flex-col items-end space-y-2 ml-4">
+                      <div
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                          product?.status === "approved"
+                            ? "bg-green-100 text-green-800"
+                            : product?.status === "pending"
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : product?.status === 'rejected'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-blue-100 text-blue-800'
+                            }`}>
+                        {product?.status === 'approved' ? 'In Marketplace' : 
+                        product?.status === 'pending' ? 'Waiting Approval' :
+                        product?.status === 'rejected' ? 'Rejected' : 
+                        product?.status?.replace(/_/g, ' ')}
+                      </div>
+                      <p className="font-bold text-lg">${product?.price.toLocaleString()}</p>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-
           </div>
         </div>
       </div>

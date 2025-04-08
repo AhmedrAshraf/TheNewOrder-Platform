@@ -595,7 +595,7 @@ const handleFileInput = async (type: string, e: React.ChangeEvent<HTMLInputEleme
         consultationAvailable: formData.consultationAvailable,
         consultationRate: consultationRateValue,
         status: formData.status,
-        creator: {creator_name: user?.name, creator_id: user.id},
+        creator: {creator_name: user?.name, creator_id: user.id, creator_title: user?.title, creator_bio: user?.bio},
         image: formData.image,
         bluePrint: formData.bluePrint ,
         demoVideo: formData.demoVideo

@@ -228,7 +228,6 @@ export function MessagesPage() {
           uid: user?.id,
           totalprice: message.proposal?.total_cost,
           customerEmail: user?.email,
-          solution_id: message.id,
           sellerId: message.sender_id,
           messageId: message.id,
           proposal: {

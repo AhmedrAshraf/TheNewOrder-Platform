@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Package, DollarSign, Star, Users, TrendingUp, Shield, 
-  Bell, ChevronRight, ArrowUp, ArrowDown, Clock, X
+  Bell, ChevronRight, ArrowUp, ArrowDown, Clock, X, CreditCard
 } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 import { AdminNav } from '../components/AdminNav';
@@ -28,6 +28,25 @@ export function AdminPage() {
   const [newOrderCompleted, setNewOrderCompleted] = useState(null)
   const [pendingOrders, setPendingOrders] = useState([]);
   const [solutionsData, setSolutionsData] = useState([]);
+  const [pendingPayments, setPendingPayments] = useState([])
+
+  const calculatePendingPayments = () => {
+    try {
+      const sum = pendingOrders.reduce((total, order) => {
+        const amount = parseFloat(order?.amount) || 0;
+        return total + amount;
+      }, 0);
+    
+      setPendingPayments(sum.toFixed(2));
+    } catch (error) {
+      console.error('Error calculating pending payments:', error);
+      setPendingPayments('0.00');
+    }
+  };
+  
+  useEffect(() => {
+    calculatePendingPayments();
+  }, [pendingOrders]);
   
   useEffect(() => {
     const fetchUser = async () => {
@@ -272,14 +291,18 @@ export function AdminPage() {
       </div>
     );
   }
+  const formattedAmount = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(parseFloat(pendingPayments));
 
   const stats = [
     { label: 'Total Users', value: users.length, icon: Users, change: '+12%', color: 'from-blue-500 to-blue-700' },
     { label: 'Total Solutions', value: solution, icon: Package, change: '+8%', color: 'from-purple-500 to-purple-700' },
     { label: 'Revenue', value: '$48,290', icon: DollarSign, change: '+24%', color: 'from-green-500 to-green-700' },
-    { label: 'Pending Reviews', value: pendingList, icon: Clock, change: '-3%', color: 'from-yellow-500 to-yellow-700' }
+    { label: 'Pending Reviews', value: pendingList, icon: Clock, change: '-3%', color: 'from-yellow-500 to-yellow-700' },
+    { label: 'Pending Payments', value: formattedAmount, icon: CreditCard, change: '-3%', changeType: 'negative', color: 'from-red-500 to-red-600',link: '/admin/payments'}
   ];
-
   return (
     <div className="min-h-screen bg-white">
       <div className="relative">
@@ -301,7 +324,7 @@ export function AdminPage() {
           <AdminNav />
           {/* Stats Cards */}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
             {stats.map((stat, index) => (
               <div key={index} className="bg-white rounded-xl p-6 border border-surface-200 shadow-card hover:shadow-card-hover transition-all duration-300">
                 <div className="flex items-center justify-between mb-4">
@@ -381,7 +404,7 @@ export function AdminPage() {
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-8 mb-8">
             <div className="bg-white rounded-xl p-6 border border-surface-200 shadow-card">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold font-poppins">Pending Payments From Admin</h2>
+                <h2 className="text-xl font-bold font-poppins">Pending Payments From Admin ({pendingOrders.length})</h2>
                 <button 
                   onClick={() => navigate('/admin/orders')}
                   className="text-sm text-secondary-500 hover:text-secondary-600 flex items-center gap-1"
