@@ -92,7 +92,7 @@ export function UserDropdown({onSignOut, onAuthClick }: UserDropdownProps) {
                   className="w-full text-left px-4 py-2 hover:bg-surface-50 flex items-center space-x-3"
                  >
                   <Wallet  className="h-4 w-4 text-surface-400" />
-                  <span>Managing payouts payment</span>
+                  <span>Payout Management</span>
                 </button>
                 <button
                   onClick={() => handleNavigation('/settings')}
