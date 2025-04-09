@@ -29,7 +29,8 @@ export function SuccessPage() {
   };
 
   const sendEmail = async (emailData: { [key: string]: any }) => {
-    const response = await axios.post('http://localhost:8200/api/send-email', emailData );
+    // const response = await axios.post('http://localhost:8200/api/send-email', emailData );
+    const response = await axios.post('https://the-new-order-platform-server.vercel.app/api/send-email', emailData );
     if (response.status === 200) {
       alert("email send successfully")
     }
@@ -113,12 +114,14 @@ export function SuccessPage() {
       }
       
   
-      // // const response = await axios.post('http://localhost:8200/api/send-email', bookingData );
-      const emailData = {...bookingData, email: user?.email};
       // const response = await axios.post('https://the-new-order-platform-server.vercel.app/api/send-email', emailData );
       // if (response.status === 200) {
       //   alert("email send successfully")
       // }
+      // const emailData = {...bookingData, email: user?.email};
+
+      const emailData = { ...bookingData[0], email: user?.email };
+      console.log(" bookingData:", bookingData)
       sendEmail(emailData)
       setBookingDetail(bookingData);
 

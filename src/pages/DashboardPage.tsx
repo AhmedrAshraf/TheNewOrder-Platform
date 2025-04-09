@@ -386,10 +386,10 @@ export function DashboardPage() {
                       <div className="min-w-0">
                         <p className="font-medium truncate">{product?.title}</p>
                         <div className="flex items-center space-x-3 mt-1">
-                          <div className="flex items-center space-x-1 text-sm text-surface-500">
+                          {/* <div className="flex items-center space-x-1 text-sm text-surface-500">
                             <ShoppingBag className="h-3 w-3" />
                             <span>{myRecentsSale.length} sales</span>
-                          </div>
+                          </div> */}
                           <div className="flex items-center space-x-1 text-sm text-surface-500">
                             <Calendar className="h-3 w-3" />
                             <span>
