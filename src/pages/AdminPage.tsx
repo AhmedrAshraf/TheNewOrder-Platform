@@ -27,7 +27,9 @@ export function AdminPage() {
   const [latestApprovalTime, setLatestApprovalTime] = useState(null)
   const [newOrderCompleted, setNewOrderCompleted] = useState(null)
   const [pendingOrders, setPendingOrders] = useState([]);
+  const [bankDetails, setBankDetails] = useState(null)
   const [solutionsData, setSolutionsData] = useState([]);
+  const [showBankDetailsModal ,setShowBankDetailsModal] = useState(false)
   
   useEffect(() => {
     const fetchUser = async () => {
@@ -272,6 +274,27 @@ export function AdminPage() {
       </div>
     );
   }
+
+  const showDetails =async (order) => {
+    console.log("🚀 ~ showDetails ~ order:", order)
+    const { data, error } = await supabase
+    .from('users')
+    .select('seller_bank_details')
+    .eq("id", order.user_id)
+    .single()
+    
+    if(error){
+      console.error("error", error);
+      return
+    }
+   
+    setBankDetails(data?.seller_bank_details)
+    setShowBankDetailsModal(true);
+    console.log("🚀 ~ showDetails ~ data:", data)
+    
+
+  }
+  
   const stats = [
     { label: 'Total Users', value: users.length, icon: Users, change: '+12%', color: 'from-blue-500 to-blue-700' },
     { label: 'Total Solutions', value: solution, icon: Package, change: '+8%', color: 'from-purple-500 to-purple-700' },
@@ -407,6 +430,15 @@ export function AdminPage() {
                       </h3>
                       <p className="text-sm text-surface-600">Ordered {timeAgo}</p>
                     </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        showDetails(order);
+                      }}
+                      className="bg-gradient-to-r px-4 py-2 rounded-lg from-primary-600 to-secondary-500 text-white"
+                    >
+                      Show Details
+                    </button>
                     <span className="px-2 py-1 bg-secondary-500 border-surface-200 text-white text-md rounded-lg flex items-center gap-1">
                       ${order?.amount}
                     </span>
@@ -480,6 +512,59 @@ export function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* Bank Details Modal */}
+{showBankDetailsModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-xl p-6 w-full max-w-md">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-bold">Bank Details</h3>
+        <button 
+          onClick={() => setShowBankDetailsModal(false)}
+          className="text-surface-500 hover:text-surface-700"
+        >
+          <X className="h-6 w-6" />
+        </button>
+      </div>
+      
+      {bankDetails ? (
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm text-surface-500">Account Name</p>
+            <p className="font-medium">{bankDetails.accountName}</p>
+          </div>
+          <div>
+            <p className="text-sm text-surface-500">Account Number</p>
+            <p className="font-medium">{bankDetails.accountNumber}</p>
+          </div>
+          <div>
+            <p className="text-sm text-surface-500">Bank Name</p>
+            <p className="font-medium">{bankDetails.bankName}</p>
+          </div>
+          <div>
+            <p className="text-sm text-surface-500">IFSC Code</p>
+            <p className="font-medium">{bankDetails.ifscCode}</p>
+          </div>
+          <div>
+            <p className="text-sm text-surface-500">Primary Account</p>
+            <p className="font-medium">{bankDetails.isPrimary ? "Yes" : "No"}</p>
+          </div>
+        </div>
+      ) : (
+        <p>No bank details available</p>
+      )}
+      
+      <div className="mt-6 flex justify-end">
+        <button
+          onClick={() => setShowBankDetailsModal(false)}
+          className="px-4 py-2 bg-surface-100 hover:bg-surface-200 rounded-lg transition-colors"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
