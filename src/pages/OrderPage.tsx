@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, Calendar, DollarSign, User, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Package, Calendar, DollarSign, User, FileArchive, CheckCircle, Download, Clock, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
@@ -53,6 +53,7 @@ export function OrderPage() {
           setError('You do not have permission to view this order');
           return;
         }
+        console.log("data", data);
         
         setOrder(data as Order);
       } catch (err) {
@@ -146,9 +147,36 @@ export function OrderPage() {
     }
   };
 
+  const downloadBlueprint = async () => {
+    if (!order?.solution?.bluePrint) {
+      alert('No blueprint available for download');
+      return;
+    }
+    try {
+      const url = order.solution.bluePrint;
+      const filename = url.split('/').pop() || 'blueprint';
+      const response = await fetch(url);
+      const blob = await response.blob();
+      
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      
+      document.body.appendChild(link);
+      link.click();
+      
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      alert('Failed to download blueprint');
+    }
+  };
+
   const statusInfo = getStatusInfo(order.status);
   return (
-    <div className="min-h-screen pt-20 bg-white">
+    <div className="min-h-screen py-20 bg-white">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <button 
@@ -173,6 +201,74 @@ export function OrderPage() {
               </span>
             </div>
           </div>
+            {/* {order?.solution?.bluePrint && (
+              console.log("order?.bluePrint", order?.solution?.bluePrint),
+              <div className="bg-blue-50/50 border border-blue-100 p-4 mb-8 rounded-xl">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium text-sm text-blue-800 flex items-center gap-2">
+                    <FileArchive className="h-5 w-5" />
+                    Workflow Blueprint
+                  </h4>
+                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded-full">
+                    Download Available
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-4 p-3 bg-white rounded-lg border border-blue-100 hover:border-blue-200 transition-colors">
+                  <div className="bg-blue-100 p-3 rounded-lg">
+                    <FileArchive className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-surface-700 mb-1">
+                      {order?.solution?.bluePrint .split("/").pop() || "blueprint.pdf"}
+                    </p>
+                    <p className="text-xs text-surface-500">
+                      Click to download the complete blueprint
+                    </p>
+                  </div>
+                  <a
+                    href={order?.solution?.bluePrint} download className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                    aria-label="Download blueprint"
+                  >
+                    <Download className="h-5 w-5" />
+                  </a>
+                </div>
+              </div>
+              )} */}
+              {order?.solution?.bluePrint && (
+  <div className="bg-blue-50/50 border border-blue-100 p-4 mb-8 rounded-xl">
+    <div className="flex items-center justify-between mb-3">
+      <h4 className="font-medium text-sm text-blue-800 flex items-center gap-2">
+        <FileArchive className="h-5 w-5" />
+        Workflow Blueprint
+      </h4>
+      <span className="text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded-full">
+        Download Available
+      </span>
+    </div>
+
+    <div className="flex items-center gap-4 p-3 bg-white rounded-lg border border-blue-100 hover:border-blue-200 transition-colors">
+      <div className="bg-blue-100 p-3 rounded-lg">
+        <FileArchive className="h-8 w-8 text-blue-600" />
+      </div>
+      <div className="flex-1">
+        <p className="text-xs font-medium text-surface-700 mb-1">
+          {order.solution.bluePrint.split('/').pop() || 'blueprint'}
+        </p>
+        <p className="text-xs text-surface-500">
+          Click to download the complete blueprint
+        </p>
+      </div>
+      <button
+        onClick={downloadBlueprint}
+        className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+        aria-label="Download blueprint"
+      >
+        <Download className="h-5 w-5" />
+      </button>
+    </div>
+  </div>
+)}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="bg-surface-50 rounded-lg p-4">

@@ -89,6 +89,8 @@ export function ProductDetailPage() {
         .eq('id', id)
         .single();
   
+        console.log("data", data.video);
+        
       if (error) {
         console.error("Error fetching product:", error);
         setError('Failed to load product');
@@ -102,7 +104,6 @@ export function ProductDetailPage() {
     fetchProduct();
   }, [id]);
 
-  console.log(product?.user_id);
   const handlePurchase = async () => {
     if (!user) {
       setShowAuthModal(true);

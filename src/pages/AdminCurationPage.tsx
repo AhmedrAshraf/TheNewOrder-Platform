@@ -282,6 +282,35 @@ export function AdminCurationPage() {
     },
   ];
 
+  const downloadBlueprint = async (selectedWorkflow) => {
+    console.log(selectedWorkflow);
+    
+    if (!selectedWorkflow?.bluePrint) {
+      alert('No blueprint available for download');
+      return;
+    }
+    try {
+      const url = selectedWorkflow.bluePrint;
+      const filename = url.split('/').pop() || 'blueprint';
+      const response = await fetch(url);
+      const blob = await response.blob();
+      
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      
+      document.body.appendChild(link);
+      link.click();
+      
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      alert('Failed to download blueprint');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <div className="relative">
@@ -555,7 +584,7 @@ export function AdminCurationPage() {
                                 </span>
                               </div>
 
-                              <div className="flex items-center gap-4 p-3 bg-white rounded-lg border border-blue-100 hover:border-blue-200 transition-colors">
+                              <div onClick={() => downloadBlueprint(selectedWorkflow)} className="flex cursor-pointer items-center gap-4 p-3 bg-white rounded-lg border border-blue-100 hover:border-blue-200 transition-colors">
                                 <div className="bg-blue-100 p-3 rounded-lg">
                                   <FileArchive className="h-8 w-8 text-blue-600" />
                                 </div>
@@ -569,14 +598,12 @@ export function AdminCurationPage() {
                                     Click to download the complete blueprint
                                   </p>
                                 </div>
-                                <a
-                                  href={selectedWorkflow.bluePrint}
-                                  download
+                                <button
                                   className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                                   aria-label="Download blueprint"
                                 >
                                   <Download className="h-5 w-5" />
-                                </a>
+                                </button>
                               </div>
                             </div>
                           )}
