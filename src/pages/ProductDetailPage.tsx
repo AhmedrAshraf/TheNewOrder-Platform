@@ -403,36 +403,21 @@ export function ProductDetailPage() {
                       <p className="text-surface-600 leading-relaxed">
                         {product.description}
                       </p>
-                      <p className="text-surface-600 leading-relaxed mt-4">
-                        This powerful AI tool streamlines your workflow and saves you hours of manual work. 
-                        Built with the latest machine learning technology, it delivers accurate results with minimal setup.
-                      </p>
                     </div>
                     
                     <div className="mb-8">
                       <h2 className="text-xl font-semibold mb-3 text-surface-900">Key Features</h2>
-                      <ul className="space-y-2 text-surface-600">
-                        <li className="flex items-start gap-2">
-                          <div className="mt-1 text-secondary-500">•</div>
-                          <span>Intuitive user interface for easy navigation</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <div className="mt-1 text-secondary-500">•</div>
-                          <span>Advanced AI processing capabilities</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <div className="mt-1 text-secondary-500">•</div>
-                          <span>Seamless integration with popular platforms</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <div className="mt-1 text-secondary-500">•</div>
-                          <span>Regular updates and improvements</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <div className="mt-1 text-secondary-500">•</div>
-                          <span>Comprehensive documentation and support</span>
-                        </li>
-                      </ul>
+                      {product.key_features && product.key_features.length > 0 ? (
+                        <div className="">
+                          {product.key_features.map((feature, index) => (
+                            <ul key={index} className="rounded-lg px-4">
+                              <li className="text-surface-600 list-disc">{feature}</li>
+                            </ul>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-surface-600 italic">No key features specified.</p>
+                      )}
                     </div>
                     
                     {product?.demoVideo && (

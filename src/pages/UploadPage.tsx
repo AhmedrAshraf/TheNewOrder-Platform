@@ -23,6 +23,9 @@ export function UploadPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false)
   const [demoVideo, setDemoVideo] = useState(null)
+  const [newFeature, setNewFeature] = useState('');
+  const [showFeatureInput, setShowFeatureInput] = useState(false);
+  const featureInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -34,6 +37,7 @@ export function UploadPage() {
     complexity: 'medium' as 'beginner' | 'medium' | 'advanced',
     integrations: [] as string[],
     requirements: [] as string[],
+    key_features: [] as string[],
     faq: [] as { question: string; answer: string }[],
     creatorBio: '',
     consultationAvailable: false,
@@ -220,6 +224,7 @@ export function UploadPage() {
         tags: formData.tags.split(',').map(tag => tag.trim()),
         complexity: formData.complexity,
         integrations: formData.integrations,
+        key_features: formData.key_features,
         faq: formData.faq,
         consultationAvailable: formData.consultationAvailable,
         consultationRate: consultationRateValue,
@@ -361,7 +366,25 @@ export function UploadPage() {
     "Automate.io",
     "Other"
   ];
-  
+
+  const handleAddFeature = () => {
+    if (newFeature.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        key_features: [...prev.key_features, newFeature.trim()]
+      }));
+      setNewFeature('');
+      setShowFeatureInput(false);
+    }
+  };
+
+  const handleRemoveFeature = (indexToRemove: number) => {
+    setFormData(prev => ({
+      ...prev,
+      key_features: prev.key_features.filter((_, index) => index !== indexToRemove)
+    }));
+  };
+
   return (
     <div className="min-h-screen pt-20 px-4 sm:px-6 lg:px-8 bg-white relative">
       <div className="max-w-3xl mx-auto relative">
@@ -624,6 +647,83 @@ export function UploadPage() {
                 </div>
               )}
             </div>
+            
+           <div className="bg-white rounded-xl border border-surface-200 shadow-card p-6">
+            <div className="flex justify-between items-center mb-4">
+              <label className="block text-sm font-medium text-gray-700">
+                Key Features
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowFeatureInput(true);
+                  setTimeout(() => featureInputRef.current?.focus(), 0);
+                }}
+                className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-secondary-600 bg-secondary-100 hover:bg-secondary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-500"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Feature
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {formData.key_features.map((feature, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between bg-gray-50 rounded-lg"
+                >
+                  <div className="flex items-center space-x-2 p-4">
+                    <span className=''>{feature}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFeature(index)}
+                    className="text-red-500 hover:text-red-700 p-4"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+
+              {showFeatureInput && (
+                  <div className="flex gap-2">
+                    <input
+                      ref={featureInputRef}
+                      type="text"
+                      value={newFeature}
+                      onChange={(e) => setNewFeature(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleAddFeature();
+                        } else if (e.key === 'Escape') {
+                          setShowFeatureInput(false);
+                          setNewFeature('');
+                        }
+                      }}
+                      className="flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:secondary-500 ring-secondary-500 sm:text-sm p-3"
+                      placeholder="Enter a key feature"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddFeature}
+                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-secondary-500-600 hover:bg-secondary-700 bg-secondary-500"
+                    >
+                      Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowFeatureInput(false);
+                        setNewFeature('');
+                      }}
+                      className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+                </div>
+              </div>
 
           <div className='grid grid-cols-2 gap-5 justify-center items-center'>
             {loading ? (

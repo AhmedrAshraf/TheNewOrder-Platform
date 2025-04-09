@@ -4,11 +4,23 @@ export interface Product {
   description: string;
   price: number;
   image: string;
-  creator: string;
+  creator: {
+    creator_name: string;
+    creator_id: string;
+    creator_title?: string;
+    creator_bio?: string;
+  };
   category: 'automation' | 'integration' | 'workflow';
   tags: string[];
   priceId?: string; // Stripe price ID
   pulses: number; // Rating/upvotes count
+  key_features?: string[]; // Array of feature strings
+  user_id: string; // ID of the creator
+  created_at: string;
+  status?: 'draft' | 'pending' | 'approved' | 'rejected';
+  faq?: { question: string; answer: string }[];
+  demoVideo?: DemoVideo | string;
+  bluePrint?: string;
 }
 
 export interface User {

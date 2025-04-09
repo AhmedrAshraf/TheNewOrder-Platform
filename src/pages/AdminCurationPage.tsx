@@ -55,6 +55,7 @@ type Workflow = {
   rejectionReason?: string;
   rating?: number;
   comments?: number;
+  key_features?: string[];
 };
 
 export function AdminCurationPage() {
@@ -487,6 +488,22 @@ export function AdminCurationPage() {
                               )}
                             </div>
                           </div>
+                         {/* Key Features Section */}
+                        {selectedWorkflow?.key_features && selectedWorkflow.key_features.length > 0 && (
+                          <div className="bg-surface-50 p-3 rounded-xl w-full">
+                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                              <CheckCircle className="h-5 w-5 text-primary-500" />
+                              Key Features
+                            </h3>
+                            <div className="">
+                              {selectedWorkflow.key_features.map((feature, index) => (
+                                <div key={index} className="bg-white p-4 rounded-lg border border-surface-200 w-full">
+                                  <span className="text-surface-700">{feature}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                           <div className="grid grid-cols-2 gap-3">
                             <div className="bg-surface-50 p-3 rounded-lg">
@@ -628,6 +645,7 @@ export function AdminCurationPage() {
                             </div>
                           </div>
                         </div>
+
                         <div className="bg-surface-50 p-6 rounded-xl w-full">
                           <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                             <LayoutDashboard className="h-5 w-5 text-primary-500" />
