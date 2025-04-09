@@ -23,6 +23,21 @@ export function UploadPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false)
   const [demoVideo, setDemoVideo] = useState(null)
+  
+  // Add new state variables for How to Make It Work section
+  const [newTool, setNewTool] = useState('');
+  const [newSubscription, setNewSubscription] = useState('');
+  const [newSkill, setNewSkill] = useState('');
+  const [newSetupStep, setNewSetupStep] = useState({ title: '', description: '' });
+  const [newCommonIssue, setNewCommonIssue] = useState({ title: '', description: '' });
+  const [showToolInput, setShowToolInput] = useState(false);
+  const [showSubscriptionInput, setShowSubscriptionInput] = useState(false);
+  const [showSkillInput, setShowSkillInput] = useState(false);
+  const [showSetupStepInput, setShowSetupStepInput] = useState(false);
+  const [showCommonIssueInput, setShowCommonIssueInput] = useState(false);
+  const toolInputRef = useRef<HTMLInputElement>(null);
+  const subscriptionInputRef = useRef<HTMLInputElement>(null);
+  const skillInputRef = useRef<HTMLInputElement>(null);
   const [newFeature, setNewFeature] = useState('');
   const [showFeatureInput, setShowFeatureInput] = useState(false);
   const featureInputRef = useRef<HTMLInputElement>(null);
@@ -43,7 +58,23 @@ export function UploadPage() {
     consultationAvailable: false,
     consultationRate: '',
     status: 'pending',
-    demoVideo: ''
+    demoVideo: '',
+    how_to_make_it_work: {
+      prerequisites: {
+        tools: [] as string[],
+        subscriptions: [] as string[],
+        skills: [] as string[]
+      },
+      difficulty_level: {
+        level: 'medium' as 'beginner' | 'medium' | 'advanced',
+        setupTime: '',
+        learningCurve: '',
+        technicalRequirements: '',
+        supportAvailability: ''
+      },
+      setup_process: [] as { title: string, description: string }[],
+      common_issues: [] as { title: string, description: string }[]
+    }
   });
   
   const handleDrag = (e: React.DragEvent) => {
@@ -232,7 +263,8 @@ export function UploadPage() {
         creator: {creator_name: user?.name, creator_id: user.id, creator_title: user?.title, creator_bio: user?.bio},
         image: formData.image,
         bluePrint: formData.bluePrint ,
-        demoVideo: formData.demoVideo
+        demoVideo: formData.demoVideo,
+        how_to_make_it_work: formData.how_to_make_it_work
       }
     ])
 
@@ -344,6 +376,151 @@ export function UploadPage() {
       setNewIntegration('');
       setShowIntegrationInput(false);
     }
+  };
+
+  // Add handler functions for How to Make It Work section
+  const handleNewToolKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && newTool.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        how_to_make_it_work: {
+          ...prev.how_to_make_it_work,
+          prerequisites: {
+            ...prev.how_to_make_it_work.prerequisites,
+            tools: [...prev.how_to_make_it_work.prerequisites.tools, newTool.trim()]
+          }
+        }
+      }));
+      setNewTool('');
+      setShowToolInput(false);
+    }
+  };
+
+  const handleNewSubscriptionKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && newSubscription.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        how_to_make_it_work: {
+          ...prev.how_to_make_it_work,
+          prerequisites: {
+            ...prev.how_to_make_it_work.prerequisites,
+            subscriptions: [...prev.how_to_make_it_work.prerequisites.subscriptions, newSubscription.trim()]
+          }
+        }
+      }));
+      setNewSubscription('');
+      setShowSubscriptionInput(false);
+    }
+  };
+
+  const handleNewSkillKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && newSkill.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        how_to_make_it_work: {
+          ...prev.how_to_make_it_work,
+          prerequisites: {
+            ...prev.how_to_make_it_work.prerequisites,
+            skills: [...prev.how_to_make_it_work.prerequisites.skills, newSkill.trim()]
+          }
+        }
+      }));
+      setNewSkill('');
+      setShowSkillInput(false);
+    }
+  };
+
+  const handleAddSetupStep = () => {
+    if (newSetupStep.title.trim() && newSetupStep.description.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        how_to_make_it_work: {
+          ...prev.how_to_make_it_work,
+          setup_process: [...prev.how_to_make_it_work.setup_process, { 
+            title: newSetupStep.title.trim(), 
+            description: newSetupStep.description.trim() 
+          }]
+        }
+      }));
+      setNewSetupStep({ title: '', description: '' });
+      setShowSetupStepInput(false);
+    }
+  };
+
+  const handleAddCommonIssue = () => {
+    if (newCommonIssue.title.trim() && newCommonIssue.description.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        how_to_make_it_work: {
+          ...prev.how_to_make_it_work,
+          common_issues: [...prev.how_to_make_it_work.common_issues, { 
+            title: newCommonIssue.title.trim(), 
+            description: newCommonIssue.description.trim() 
+          }]
+        }
+      }));
+      setNewCommonIssue({ title: '', description: '' });
+      setShowCommonIssueInput(false);
+    }
+  };
+
+  const handleRemoveTool = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      how_to_make_it_work: {
+        ...prev.how_to_make_it_work,
+        prerequisites: {
+          ...prev.how_to_make_it_work.prerequisites,
+          tools: prev.how_to_make_it_work.prerequisites.tools.filter((_, i) => i !== index)
+        }
+      }
+    }));
+  };
+
+  const handleRemoveSubscription = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      how_to_make_it_work: {
+        ...prev.how_to_make_it_work,
+        prerequisites: {
+          ...prev.how_to_make_it_work.prerequisites,
+          subscriptions: prev.how_to_make_it_work.prerequisites.subscriptions.filter((_, i) => i !== index)
+        }
+      }
+    }));
+  };
+
+  const handleRemoveSkill = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      how_to_make_it_work: {
+        ...prev.how_to_make_it_work,
+        prerequisites: {
+          ...prev.how_to_make_it_work.prerequisites,
+          skills: prev.how_to_make_it_work.prerequisites.skills.filter((_, i) => i !== index)
+        }
+      }
+    }));
+  };
+
+  const handleRemoveSetupStep = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      how_to_make_it_work: {
+        ...prev.how_to_make_it_work,
+        setup_process: prev.how_to_make_it_work.setup_process.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+  const handleRemoveCommonIssue = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      how_to_make_it_work: {
+        ...prev.how_to_make_it_work,
+        common_issues: prev.how_to_make_it_work.common_issues.filter((_, i) => i !== index)
+      }
+    }));
   };
 
   const availableIntegrations = [
@@ -648,7 +825,428 @@ export function UploadPage() {
               )}
             </div>
             
-           <div className="bg-white rounded-xl border border-surface-200 shadow-card p-6">
+            {/* How to Make It Work Section */}
+            <div className="bg-white rounded-xl border border-surface-200 shadow-card p-6">
+              <h3 className="text-lg font-semibold mb-4">How to Make It Work</h3>
+              
+              {/* Prerequisites */}
+              <div className="mb-6">
+                <h4 className="font-medium mb-3 text-surface-900">Prerequisites</h4>
+                
+                {/* Required Tools */}
+                <div className="mb-4 shadow-card p-4 rounded-xl">
+                  <div className="flex items-center justify-between mb-2">
+                    <h5 className="text-sm font-medium text-surface-700">Required Tools</h5>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowToolInput(true);
+                        setTimeout(() => toolInputRef.current?.focus(), 0);
+                      }}
+                      className="text-xs text-secondary-600 hover:text-secondary-700"
+                    >
+                      + Add Tool
+                    </button>
+                  </div>
+                  
+                  {formData.how_to_make_it_work.prerequisites.tools.length === 0 ? (
+                    <p className="text-sm text-surface-500 italic">No tools specified</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {formData.how_to_make_it_work.prerequisites.tools.map((tool, index) => (
+                        <div key={index} className="flex items-center justify-between bg-surface-50 p-2 rounded-lg">
+                          <span className="text-sm">{tool}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveTool(index)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {showToolInput && (
+                    <div className="mt-2">
+                      <input
+                        ref={toolInputRef}
+                        type="text"
+                        value={newTool}
+                        onChange={(e) => setNewTool(e.target.value)}
+                        onKeyDown={handleNewToolKeyDown}
+                        placeholder="Type and press Enter"
+                        className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
+                      />
+                    </div>
+                  )}
+                </div>
+                
+                {/* Subscriptions */}
+                <div className="mb-4 shadow-card p-4 rounded-xl">
+                  <div className="flex items-center justify-between mb-2">
+                    <h5 className="text-sm font-medium text-surface-700">Subscriptions</h5>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowSubscriptionInput(true);
+                        setTimeout(() => subscriptionInputRef.current?.focus(), 0);
+                      }}
+                      className="text-xs text-secondary-600 hover:text-secondary-700"
+                    >
+                      + Add Subscription
+                    </button>
+                  </div>
+                  
+                  {formData.how_to_make_it_work.prerequisites.subscriptions.length === 0 ? (
+                    <p className="text-sm text-surface-500 italic">No subscriptions specified</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {formData.how_to_make_it_work.prerequisites.subscriptions.map((subscription, index) => (
+                        <div key={index} className="flex items-center justify-between bg-surface-50 p-2 rounded-lg">
+                          <span className="text-sm">{subscription}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSubscription(index)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {showSubscriptionInput && (
+                    <div className="mt-2">
+                      <input
+                        ref={subscriptionInputRef}
+                        type="text"
+                        value={newSubscription}
+                        onChange={(e) => setNewSubscription(e.target.value)}
+                        onKeyDown={handleNewSubscriptionKeyDown}
+                        placeholder="Type and press Enter"
+                        className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
+                      />
+                    </div>
+                  )}
+                </div>
+                
+                {/* Skills Needed */}
+                <div className="mb-4 shadow-card p-4 rounded-xl">
+                  <div className="flex items-center justify-between mb-2 ">
+                    <h5 className="text-sm font-medium text-surface-700">Skills Needed</h5>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowSkillInput(true);
+                        setTimeout(() => skillInputRef.current?.focus(), 0);
+                      }}
+                      className="text-xs text-secondary-600 hover:text-secondary-700"
+                    >
+                      + Add Skill
+                    </button>
+                  </div>
+                  
+                  {formData.how_to_make_it_work.prerequisites.skills.length === 0 ? (
+                    <p className="text-sm text-surface-500 italic">No skills specified</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {formData.how_to_make_it_work.prerequisites.skills.map((skill, index) => (
+                        <div key={index} className="flex items-center justify-between bg-surface-50 p-2 rounded-lg">
+                          <span className="text-sm">{skill}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSkill(index)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {showSkillInput && (
+                    <div className="mt-2">
+                      <input
+                        ref={skillInputRef}
+                        type="text"
+                        value={newSkill}
+                        onChange={(e) => setNewSkill(e.target.value)}
+                        onKeyDown={handleNewSkillKeyDown}
+                        placeholder="Type and press Enter"
+                        className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Difficulty Level */}
+              <div className="mb-6 shadow-card p-4 rounded-xl">
+                <h4 className="font-medium mb-3 text-surface-900">Difficulty Level</h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-surface-700">Level</label>
+                    <select
+                      value={formData.how_to_make_it_work.difficulty_level.level}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        how_to_make_it_work: {
+                          ...prev.how_to_make_it_work,
+                          difficulty_level: {
+                            ...prev.how_to_make_it_work.difficulty_level,
+                            level: e.target.value as 'beginner' | 'medium' | 'advanced'
+                          }
+                        }
+                      }))}
+                      className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
+                    >
+                      <option value="beginner">Beginner</option>
+                      <option value="medium">Medium</option>
+                      <option value="advanced">Advanced</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-surface-700">Setup Time</label>
+                    <input
+                      type="text"
+                      value={formData.how_to_make_it_work.difficulty_level.setupTime}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        how_to_make_it_work: {
+                          ...prev.how_to_make_it_work,
+                          difficulty_level: {
+                            ...prev.how_to_make_it_work.difficulty_level,
+                            setupTime: e.target.value
+                          }
+                        }
+                      }))}
+                      placeholder="e.g., 30 minutes"
+                      className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-surface-700">Learning Curve</label>
+                    <input
+                      type="text"
+                      value={formData.how_to_make_it_work.difficulty_level.learningCurve}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        how_to_make_it_work: {
+                          ...prev.how_to_make_it_work,
+                          difficulty_level: {
+                            ...prev.how_to_make_it_work.difficulty_level,
+                            learningCurve: e.target.value
+                          }
+                        }
+                      }))}
+                      placeholder="e.g., Moderate, requires basic JavaScript knowledge"
+                      className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-surface-700">Technical Requirements</label>
+                    <input
+                      type="text"
+                      value={formData.how_to_make_it_work.difficulty_level.technicalRequirements}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        how_to_make_it_work: {
+                          ...prev.how_to_make_it_work,
+                          difficulty_level: {
+                            ...prev.how_to_make_it_work.difficulty_level,
+                            technicalRequirements: e.target.value
+                          }
+                        }
+                      }))}
+                      placeholder="e.g., Node.js v14+, modern web browser"
+                      className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-surface-700">Support Availability</label>
+                    <input
+                      type="text"
+                      value={formData.how_to_make_it_work.difficulty_level.supportAvailability}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        how_to_make_it_work: {
+                          ...prev.how_to_make_it_work,
+                          difficulty_level: {
+                            ...prev.how_to_make_it_work.difficulty_level,
+                            supportAvailability: e.target.value
+                          }
+                        }
+                      }))}
+                      placeholder="e.g., Email support, documentation available"
+                      className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Setup Process */}
+              <div className="mb-6 shadow-card p-4 rounded-xl">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium text-surface-900">Setup Process</h4>
+                  <button
+                    type="button"
+                    onClick={() => setShowSetupStepInput(true)}
+                    className="text-sm text-secondary-600 hover:text-secondary-700"
+                  >
+                    + Add Step
+                  </button>
+                </div>
+                
+                {formData.how_to_make_it_work.setup_process.length === 0 ? (
+                  <p className="text-sm text-surface-500 italic">No setup steps specified</p>
+                ) : (
+                  <div className="space-y-4">
+                    {formData.how_to_make_it_work.setup_process.map((step, index) => (
+                      <div key={index} className="bg-surface-50 p-4 rounded-lg border border-surface-200">
+                        <div className="flex justify-between mb-2">
+                          <h5 className="font-medium text-surface-900">Step {index + 1}: {step.title}</h5>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSetupStep(index)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <p className="text-sm text-surface-600">{step.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {showSetupStepInput && (
+                  <div className="mt-4 bg-surface-50 p-4 rounded-lg border border-surface-200">
+                    <h5 className="font-medium mb-2 text-surface-900">Add New Step</h5>
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={newSetupStep.title}
+                        onChange={(e) => setNewSetupStep(prev => ({ ...prev, title: e.target.value }))}
+                        placeholder="Step title"
+                        className="w-full bg-white border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
+                      />
+                      <textarea
+                        value={newSetupStep.description}
+                        onChange={(e) => setNewSetupStep(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Step description"
+                        rows={3}
+                        className="w-full bg-white border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowSetupStepInput(false);
+                            setNewSetupStep({ title: '', description: '' });
+                          }}
+                          className="px-3 py-1.5 bg-surface-200 hover:bg-surface-300 text-surface-700 rounded-lg text-sm"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAddSetupStep}
+                          className="px-3 py-1.5 bg-secondary-500 hover:bg-secondary-600 text-white rounded-lg text-sm"
+                        >
+                          Add Step
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Common Issues & Solutions */}
+              <div className="mb-6 shadow-card p-4 rounded-xl">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium text-surface-900">Common Issues & Solutions</h4>
+                  <button
+                    type="button"
+                    onClick={() => setShowCommonIssueInput(true)}
+                    className="text-sm text-secondary-600 hover:text-secondary-700"
+                  >
+                    + Add Issue
+                  </button>
+                </div>
+                
+                {formData.how_to_make_it_work.common_issues.length === 0 ? (
+                  <p className="text-sm text-surface-500 italic">No common issues specified</p>
+                ) : (
+                  <div className="space-y-4">
+                    {formData.how_to_make_it_work.common_issues.map((issue, index) => (
+                      <div key={index} className="bg-surface-50 p-4 rounded-lg border border-surface-200">
+                        <div className="flex justify-between mb-2">
+                          <h5 className="font-medium text-surface-900">{issue.title}</h5>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCommonIssue(index)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <p className="text-sm text-surface-600">{issue.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {showCommonIssueInput && (
+                  <div className="mt-4 bg-surface-50 p-4 rounded-lg border border-surface-200">
+                    <h5 className="font-medium mb-2 text-surface-900">Add New Issue</h5>
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={newCommonIssue.title}
+                        onChange={(e) => setNewCommonIssue(prev => ({ ...prev, title: e.target.value }))}
+                        placeholder="Issue title"
+                        className="w-full bg-white border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
+                      />
+                      <textarea
+                        value={newCommonIssue.description}
+                        onChange={(e) => setNewCommonIssue(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Issue description and solution"
+                        rows={3}
+                        className="w-full bg-white border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowCommonIssueInput(false);
+                            setNewCommonIssue({ title: '', description: '' });
+                          }}
+                          className="px-3 py-1.5 bg-surface-200 hover:bg-surface-300 text-surface-700 rounded-lg text-sm"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAddCommonIssue}
+                          className="px-3 py-1.5 bg-secondary-500 hover:bg-secondary-600 text-white rounded-lg text-sm"
+                        >
+                          Add Issue
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="bg-white rounded-xl border border-surface-200 shadow-card p-6">
             <div className="flex justify-between items-center mb-4">
               <label className="block text-sm font-medium text-gray-700">
                 Key Features
@@ -867,7 +1465,7 @@ export function UploadPage() {
               </li>
             </ul>
           </div>
-        
+
             <div className="pb-24">
               <button
                 type="submit"
