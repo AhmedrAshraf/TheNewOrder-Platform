@@ -1,7 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
-import { Check, Clock, AlertCircle, ShoppingBag, Calendar,  Download, ArrowRight, RefreshCw, CreditCard, AlertTriangle} from 'lucide-react';
+// import { Check, Clock, AlertCircle, ShoppingBag, Calendar,  Download, ArrowRight, RefreshCw, CreditCard, AlertTriangle} from 'lucide-react';
+import { 
+    Check, 
+    Clock, 
+    AlertCircle, 
+    ShoppingBag, 
+    Calendar, 
+    Download, 
+    ArrowRight,
+    RefreshCw,
+    CreditCard,
+    AlertTriangle,
+    Banknote,
+    Edit,
+    X
+  } from 'lucide-react';
 import { format } from 'date-fns';
 
 function ManagePayouts() {
@@ -10,6 +25,16 @@ function ManagePayouts() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [totalPending, setTotalPending] = useState(0);
+    const [showBankModal, setShowBankModal] = useState(null)
+    const [bankDetails, setBankDetails] = useState({
+        accountName: '',
+        accountNumber: '',
+        bankName: '',
+        ifscCode: '',
+        isPrimary: false
+    });
+    const [hasBankAccount, setHasBankAccount] = useState(false);
+
 
     const fetchPendingPayouts = async () => {
         try {
@@ -37,6 +62,45 @@ function ManagePayouts() {
         }
     };
 
+    // Removed duplicate fetchBankDetails function
+
+    const fetchBankDetails = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('users')
+                .select('seller_bank_details')
+                .eq('id', user.id)
+                .single();
+
+            if (!error && data.seller_bank_details) {
+                setBankDetails(data.seller_bank_details);
+                setHasBankAccount(true);
+            }
+        } catch (err) {
+            console.error("Error fetching bank details:", err);
+        }
+    };
+
+    const saveBankDetails = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('users')
+                .update({ seller_bank_details: bankDetails })
+                .eq('id', user?.id);
+
+            if (error) {
+                console.log("Error while saving account:", error);
+                alert("Error while saving account");
+                return;
+            }
+
+            setHasBankAccount(true);
+            setShowBankModal(false);
+        } catch (err) {
+            console.log("Error:", err);
+        }
+    };
+
     const calculateTotalPending = (orders) => {
         const total = orders?.reduce((sum, order) => sum + parseFloat(order.amount || 0), 0) || 0;
         setTotalPending(total);
@@ -45,8 +109,25 @@ function ManagePayouts() {
     useEffect(() => {
         if (user?.id) {
             fetchPendingPayouts();
+            fetchBankDetails();
         }
     }, [user?.id]);
+
+    const handleManageBankAccount = () => {
+        if (hasBankAccount) {
+            // Show view/edit modal with existing details
+            setShowBankModal(true);
+        } else {
+            setBankDetails({
+                accountName: '',
+                accountNumber: '',
+                bankName: '',
+                ifscCode: '',
+                isPrimary: false
+            });
+            setShowBankModal(true);
+        }
+    };
 
     if (!user) {
         return <div className="p-6 text-center text-surface-600">Please log in to view payouts</div>;
@@ -77,6 +158,29 @@ function ManagePayouts() {
         );
     }
 
+
+
+    // const saveBankDetails = async() =>{
+    //     try{
+    //         const {data, error } = await supabase
+    //         .from('users')
+    //         .update({"seller_bank_details": {...bankDetails}})
+    //         .eq('id', user?.id)
+
+    //         if(error){
+    //             console.log("error while adding account");
+    //             alert("error while adding account");
+    //         }
+
+    //         console.log(data);
+    //     }catch(err){
+    //         console.log("error", error);
+    //     }
+
+    //     console.log("added");
+    //     setShowBankModal(false);
+    // }
+
     return (
     <div className="min-h-screen pt-20 px-4 sm:px-6 lg:px-8 bg-white relative">
             {/* Header */}
@@ -96,9 +200,16 @@ function ManagePayouts() {
                                 ${totalPending.toFixed(2)}
                             </p>
                         </div>
-                        <button className="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white rounded-lg transition-all shadow-md hover:shadow-lg flex items-center gap-2">
-                            <CreditCard className="h-5 w-5" />
-                            Manage my bank account
+                        <button 
+                            onClick={handleManageBankAccount}
+                            className="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white rounded-lg transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+                        >
+                            {hasBankAccount ? (
+                                <Edit className="h-5 w-5" />
+                            ) : (
+                                <CreditCard className="h-5 w-5" />
+                            )}
+                            {hasBankAccount ? 'Edit Bank Account' : 'Add Bank Account'}
                         </button>
                     </div>
                 </div>
@@ -118,26 +229,26 @@ function ManagePayouts() {
                                     <div className="relative flex-shrink-0">
                                         <div className="w-20 h-20 rounded-lg overflow-hidden bg-surface-100">
                                             <img
-                                                src={order.solution?.image || '/placeholder-product.jpg'}
-                                                alt={order.solution?.title}
+                                                src={order?.solution?.image || '/placeholder-product.jpg'}
+                                                alt={order?.solution?.title}
                                                 className="w-full h-full object-cover"
                                             />
                                         </div>
-                                        {order.solution?.status === "approved" && (
+                                        {order?.solution?.status === "approved" && (
                                             <div className="absolute -top-2 -right-2 bg-green-500 rounded-full p-1 shadow-sm">
                                                 <Check className="h-3 w-3 text-white" />
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* Order Details */}
+                                    {/* Order? Details */}
                                     <div className="flex-1 min-w-0">
                                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                                             <h3 className="text-lg font-semibold truncate">
-                                                {order.solution?.title || 'Solution #' + order.solution_id}
+                                                {order?.solution?.title || 'Solution #' + order?.solution_id}
                                             </h3>
                                             <p className="text-xl font-bold text-primary-600">
-                                                ${parseFloat(order.amount).toFixed(2)}
+                                                ${parseFloat(order?.amount).toFixed(2)}
                                             </p>
                                         </div>
 
@@ -191,6 +302,105 @@ function ManagePayouts() {
                     </p>
                 </div>
             )}
+            {showBankModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold">
+                                {hasBankAccount ? 'Edit Bank Account' : 'Add Bank Account'}
+                            </h3>
+                            <button 
+                                onClick={() => setShowBankModal(false)}
+                                className="p-1 rounded-full hover:bg-surface-100"
+                            >
+                                <X className="h-5 w-5 text-surface-500" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-surface-700 mb-1">
+                                    Account Holder Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={bankDetails.accountName}
+                                    onChange={(e) => setBankDetails({...bankDetails, accountName: e.target.value})}
+                                    className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+                                    placeholder="Enter account name"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-surface-700 mb-1">
+                                    Bank Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={bankDetails.bankName}
+                                    onChange={(e) => setBankDetails({...bankDetails, bankName: e.target.value})}
+                                    className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+                                    placeholder="Enter bank name"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-surface-700 mb-1">
+                                    Account Number
+                                </label>
+                                <input
+                                    type="text"
+                                    value={bankDetails.accountNumber}
+                                    onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
+                                    className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+                                    placeholder="1234567890"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-surface-700 mb-1">
+                                    IFSC Code
+                                </label>
+                                <input
+                                    type="text"
+                                    value={bankDetails.ifscCode}
+                                    onChange={(e) => setBankDetails({...bankDetails, ifscCode: e.target.value})}
+                                    className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+                                    placeholder="Enter IFSC Code"
+                                />
+                            </div>
+
+                            <div className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    checked={bankDetails.isPrimary}
+                                    onChange={(e) => setBankDetails({...bankDetails, isPrimary: e.target.checked})}
+                                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-surface-300 rounded"
+                                />
+                                <label className="ml-2 block text-sm text-surface-700">
+                                    Set as primary account for payouts
+                                </label>
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-4">
+                                <button
+                                    onClick={() => setShowBankModal(false)}
+                                    className="px-4 py-2 border border-surface-300 rounded-lg text-surface-700 hover:bg-surface-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={saveBankDetails}
+                                    className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg shadow-sm"
+                                >
+                                    {hasBankAccount ? 'Update Details' : 'Save Details'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }
