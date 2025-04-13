@@ -45,6 +45,16 @@ export function UserDropdown({onSignOut, onAuthClick }: UserDropdownProps) {
 
   return (
     <div className="relative" ref={dropdownRef}>
+      {!user ? (
+      <button
+        onClick={toggleDropdown}
+        className="px-6 py-3 bg-gradient-to-r flex gap-3 capitalize from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
+        title={user ? 'Account' : 'Sign In'}
+      >
+        <User className="h-5 w-5" />Get started
+          <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-secondary-500 rounded-full border-2 border-white"></span>
+      </button>
+        ):(
       <button
         onClick={toggleDropdown}
         className="p-2 hover:bg-surface-100 rounded-lg group relative"
@@ -55,6 +65,7 @@ export function UserDropdown({onSignOut, onAuthClick }: UserDropdownProps) {
           <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-secondary-500 rounded-full border-2 border-white"></span>
         )}
       </button>
+      )}
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl border border-surface-200 shadow-xl z-50 overflow-hidden">

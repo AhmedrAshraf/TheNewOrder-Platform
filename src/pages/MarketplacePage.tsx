@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Grid3X3, ListFilter, TrendingUp, Zap, Search, ChevronDown, X, Check, ChevronRight, LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import type { Product } from '../types';
 import { supabase } from '../lib/supabase';
 
@@ -147,6 +147,15 @@ export function MarketplacePage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [solutions, setSolutions] = useState([]);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const searchParam = params.get('search');
+    if (searchParam) {
+      setSearchQuery(searchParam);
+    }
+  }, [location.search]);
 
   useEffect(()=>{
     const fetchSolutions = async () => {

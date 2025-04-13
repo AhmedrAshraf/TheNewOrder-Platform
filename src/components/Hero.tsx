@@ -82,6 +82,13 @@ fetchProduct();
     navigate(`/product/${productId}`);
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/marketplace?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
   return (
     <>
       <div className="relative overflow-hidden bg-white mt-16 md:mt-20">
@@ -103,7 +110,7 @@ fetchProduct();
             </p>
 
             <div className="max-w-2xl mx-auto mb-8">
-              <div className="relative">
+              <form onSubmit={handleSearch} className="relative">
                 <input
                   type="text"
                   value={searchQuery}
@@ -114,13 +121,14 @@ fetchProduct();
                 <Search className="absolute left-4 top-4 h-6 w-6 text-surface-400" />
                 {searchQuery && (
                   <button 
+                    type="button"
                     onClick={() => setSearchQuery('')}
                     className="absolute right-4 top-4 text-surface-400 hover:text-surface-600"
                   >
                     <X className="h-6 w-6" />
                   </button>
                 )}
-              </div>
+              </form>
             </div>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">

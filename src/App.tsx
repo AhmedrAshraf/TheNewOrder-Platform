@@ -24,8 +24,6 @@ import { SuccessPage } from './pages/SuccessPage';
 import { MessagesPage } from './pages/MessagesPage';
 import { EnvCheck } from './pages/EnvCheck';
 import { OrderPage } from './pages/OrderPage';
-import { QuantumBackground } from './components/QuantumBackground';
-import type { Product, AuthState } from './types';
 import { supabase } from './lib/supabase';
 import ManagePayouts from "./pages/ManagePayouts"
 
