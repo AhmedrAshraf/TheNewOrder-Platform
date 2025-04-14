@@ -5,7 +5,6 @@ import { useClickOutside } from "../hooks/useClickOutside";
 import {useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import {useAuth} from "../context/AuthContext"
-import type {AuthState } from '../types';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -122,10 +121,15 @@ export function AuthModal({
             return;
           }
   
-          
+        const isLocal = window.location.hostname === 'localhost';
+        const redirectUrl = isLocal ? 'http://localhost:5173/auth/callback': 'https://the-new-order-platform.vercel.app/auth/callback';
+
         const { data, error } = await supabase.auth.signUp({
           email: trimmedEmail,
           password: password,
+          options: {
+            emailRedirectTo: redirectUrl,
+          },
         })
         
         if(error) {
@@ -136,37 +140,40 @@ export function AuthModal({
           setError("User already exists");
           return;
         }
+        localStorage.setItem('pendingSignup', JSON.stringify(email, data?.id))
+        console.log("data added in localstorage");
         
         // Insert user row
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert([{
-            id: data.user.id,
-            name,
-            email: trimmedEmail,
-            role: isAdmin ? "admin" : "user",
-            bio: bio,
-            title: title,
-            last_name: lastName
-          }]);
+        // const { error: insertError } = await supabase
+        //   .from('users')
+        //   .insert([{
+        //     id: data.user.id,
+        //     name,
+        //     email: trimmedEmail,
+        //     role: isAdmin ? "admin" : "user",
+        //     bio: bio,
+        //     title: title,
+        //     last_name: lastName
+        //   }]);
   
-        if (insertError) {
-          setError(insertError.message || "Error while inserting user.");
-          return;
-        }
+        // if (insertError) {
+        //   setError(insertError.message || "Error while inserting user.");
+        //   return;
+        // }
   
-        // Fetch the newly created user
-        const { data: userData } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
+        // // Fetch the newly created user
+        // const { data: userData } = await supabase
+        //   .from('users')
+        //   .select('*')
+        //   .eq('id', data.user.id)
+        //   .single();
   
-        if (userData) {
-          setUser(userData); // This updates the auth context
-          localStorage.setItem('userId', data.user.id);
-          localStorage.setItem('authState', JSON.stringify(userData));
-        }
+        // if (userData) {
+        //   setUser(userData); // This updates the auth context
+        //   localStorage.setItem('userId', data.user.id);
+        //   localStorage.setItem('authState', JSON.stringify(userData));
+        // }
+        
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
           email: trimmedEmail,

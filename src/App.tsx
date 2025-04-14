@@ -1,5 +1,5 @@
 import { StrictMode, useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useSearchParams } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { ProductCard } from './components/ProductCard';
@@ -26,12 +26,14 @@ import { EnvCheck } from './pages/EnvCheck';
 import { OrderPage } from './pages/OrderPage';
 import { supabase } from './lib/supabase';
 import ManagePayouts from "./pages/ManagePayouts"
+import AuthCallback from './components/AuthCallback';
 
 function AppContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOption, setFilterOption] = useState<'latest' | 'popular' | 'trending'>('popular');
   const { user, setUser } = useAuth();
+  const [params]=  useSearchParams()
   const navigate = useNavigate();
 
 
@@ -78,7 +80,6 @@ function AppContent() {
     navigate('/');
   };
 
-
   return (
     <div className="min-h-screen bg-white flex flex-col relative">
       <ScrollToTop />
@@ -119,6 +120,7 @@ function AppContent() {
           <Route path="/success" element={<SuccessPage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/env" element={<EnvCheck />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
         </Routes>
       </div>
 
