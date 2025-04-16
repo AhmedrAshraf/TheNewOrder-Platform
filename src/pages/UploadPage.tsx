@@ -272,7 +272,7 @@ export function UploadPage() {
       console.error('error', error);
     }
     console.log("✅ solutions added");
-    navigate('/marketplace');
+    navigate('/dashboard');
   };
 
   const nextStep = () => {
