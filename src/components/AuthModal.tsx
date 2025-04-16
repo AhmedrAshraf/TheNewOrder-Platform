@@ -112,11 +112,11 @@ export function AuthModal({
       const trimmedEmail = email.trim();
       
       if(isSignUp) {
-          const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+          const strongPasswordRegex = /^(?=.*[a-z])(?=.*\d).{8,}$/;
         
           if (!strongPasswordRegex.test(password)) {
             setError(
-              "Password must be at least 8 characters long and include uppercase, lowercase, number."
+              "Password must be at least 8 characters long and include, lowercase, number."
             );
             return;
           }

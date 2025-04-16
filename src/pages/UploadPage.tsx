@@ -652,9 +652,10 @@ export function UploadPage() {
                   <option value="workflow">Workflow</option>
                 </select>
               </div>
-              
               <div className="mt-6">
-                <label className="block text-sm font-medium mb-2">Tags <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium mb-2">
+                  Tags <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={formData.tags}
@@ -663,8 +664,9 @@ export function UploadPage() {
                   placeholder="Enter tags separated by commas"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">Enter tags separated by commas</p>
               </div>
-            </div>
+             </div>
             
             <div className="bg-white rounded-xl border border-surface-200 shadow-card p-6">
               <h3 className="text-lg font-semibold mb-4">Requirements</h3>
@@ -1437,6 +1439,7 @@ export function UploadPage() {
                   type="file"
                   className="hidden"
                   multiple
+                  accept="video/mp4,video/webm,video/quicktime"
                   onChange={(e) => handleFileInput('demoVideo', e)}
                 />
               </label>

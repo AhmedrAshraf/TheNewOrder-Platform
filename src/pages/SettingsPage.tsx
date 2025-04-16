@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Lock, Bell, CreditCard } from 'lucide-react';
 import type { User as UserType } from '../types';
@@ -32,10 +32,13 @@ const SAMPLE_PURCHASES = [
 export function SettingsPage() {
   const navigate = useNavigate();
     const { user } = useAuth();
+    console.log("🚀 ~ SettingsPage ~ user:", user)
   const [activeTab, setActiveTab] = useState('profile');
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
+    name: '',
+    lastName: '',
+    title: '',
+    email: '',
     bio: '',
     currentPassword: '',
     newPassword: '',
@@ -44,6 +47,20 @@ export function SettingsPage() {
     marketingEmails: false,
     twoFactorAuth: false
   });
+  
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || '',
+        lastName: user.last_name || '',
+        title: user.title || '',
+        email: user.email || '',
+        bio: user.bio || ''
+      }));
+    }
+  }, [user]);
+  
 
   // Redirect if not logged in
   if (!user) {
@@ -104,8 +121,9 @@ export function SettingsPage() {
               {activeTab === 'profile' && (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <h2 className="text-xl font-bold mb-4 font-poppins">Profile Information</h2>
-                  
-                  <div>
+
+                  <div className="flex w-full gap-4">
+                  <div className='w-full'>
                     <label className="block text-sm font-medium mb-2">Display Name</label>
                     <input
                       type="text"
@@ -115,7 +133,29 @@ export function SettingsPage() {
                       className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
                     />
                   </div>
-                  
+                  <div className='w-full'>
+                    <label className="block text-sm font-medium mb-2">Last Name</label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium mb-2">Title</label>
+                    <input
+                      type="text"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleChange}
+                      className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
+                    />
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium mb-2">Email Address</label>
                     <input
