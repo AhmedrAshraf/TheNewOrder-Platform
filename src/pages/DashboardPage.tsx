@@ -256,10 +256,10 @@ export function DashboardPage() {
               <p className="text-surface-600">Here's what's happening with your AI solutions</p>
             </div>
             <div className="flex gap-4">
-              <button className="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-colors shadow-lg hover:shadow-xl flex items-center gap-2">
+              {/* <button className="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-colors shadow-lg hover:shadow-xl flex items-center gap-2">
                 <Zap className="h-4 w-4" />
                 <span>Download Report</span>
-              </button>
+              </button> */}
             </div>
           </div>
 

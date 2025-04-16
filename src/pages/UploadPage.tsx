@@ -379,56 +379,56 @@ export function UploadPage() {
   };
 
   // Add handler functions for How to Make It Work section
-  const handleNewToolKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && newTool.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        how_to_make_it_work: {
-          ...prev.how_to_make_it_work,
-          prerequisites: {
-            ...prev.how_to_make_it_work.prerequisites,
-            tools: [...prev.how_to_make_it_work.prerequisites.tools, newTool.trim()]
-          }
-        }
-      }));
-      setNewTool('');
-      setShowToolInput(false);
-    }
-  };
+  // const handleNewToolKeyDown = (e: React.KeyboardEvent) => {
+  //   if (newTool.trim()) {
+  //     setFormData(prev => ({
+  //       ...prev,
+  //       how_to_make_it_work: {
+  //         ...prev.how_to_make_it_work,
+  //         prerequisites: {
+  //           ...prev.how_to_make_it_work.prerequisites,
+  //           tools: [...prev.how_to_make_it_work.prerequisites.tools, newTool.trim()]
+  //         }
+  //       }
+  //     }));
+  //     setNewTool('');
+  //     setShowToolInput(false);
+  //   }
+  // };
 
-  const handleNewSubscriptionKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && newSubscription.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        how_to_make_it_work: {
-          ...prev.how_to_make_it_work,
-          prerequisites: {
-            ...prev.how_to_make_it_work.prerequisites,
-            subscriptions: [...prev.how_to_make_it_work.prerequisites.subscriptions, newSubscription.trim()]
-          }
-        }
-      }));
-      setNewSubscription('');
-      setShowSubscriptionInput(false);
-    }
-  };
+  // const handleNewSubscriptionKeyDown = (e: React.KeyboardEvent) => {
+  //   if (newSubscription.trim()) {
+  //     setFormData(prev => ({
+  //       ...prev,
+  //       how_to_make_it_work: {
+  //         ...prev.how_to_make_it_work,
+  //         prerequisites: {
+  //           ...prev.how_to_make_it_work.prerequisites,
+  //           subscriptions: [...prev.how_to_make_it_work.prerequisites.subscriptions, newSubscription.trim()]
+  //         }
+  //       }
+  //     }));
+  //     setNewSubscription('');
+  //     setShowSubscriptionInput(false);
+  //   }
+  // };
 
-  const handleNewSkillKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && newSkill.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        how_to_make_it_work: {
-          ...prev.how_to_make_it_work,
-          prerequisites: {
-            ...prev.how_to_make_it_work.prerequisites,
-            skills: [...prev.how_to_make_it_work.prerequisites.skills, newSkill.trim()]
-          }
-        }
-      }));
-      setNewSkill('');
-      setShowSkillInput(false);
-    }
-  };
+  // const handleNewSkillKeyDown = (e: React.KeyboardEvent) => {
+  //   if (newSkill.trim()) {
+  //     setFormData(prev => ({
+  //       ...prev,
+  //       how_to_make_it_work: {
+  //         ...prev.how_to_make_it_work,
+  //         prerequisites: {
+  //           ...prev.how_to_make_it_work.prerequisites,
+  //           skills: [...prev.how_to_make_it_work.prerequisites.skills, newSkill.trim()]
+  //         }
+  //       }
+  //     }));
+  //     setNewSkill('');
+  //     setShowSkillInput(false);
+  //   }
+  // };
 
   const handleAddSetupStep = () => {
     if (newSetupStep.title.trim() && newSetupStep.description.trim()) {
@@ -871,16 +871,37 @@ export function UploadPage() {
                   )}
                   
                   {showToolInput && (
-                    <div className="mt-2">
+                    <div className="mt-2 flex gap-2">
                       <input
                         ref={toolInputRef}
                         type="text"
                         value={newTool}
                         onChange={(e) => setNewTool(e.target.value)}
-                        onKeyDown={handleNewToolKeyDown}
-                        placeholder="Type and press Enter"
-                        className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
+                        placeholder="Type tool name"
+                        className="flex-1 bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
                       />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (newTool.trim()) {
+                            setFormData(prev => ({
+                              ...prev,
+                              how_to_make_it_work: {
+                                ...prev.how_to_make_it_work,
+                                prerequisites: {
+                                  ...prev.how_to_make_it_work.prerequisites,
+                                  tools: [...prev.how_to_make_it_work.prerequisites.tools, newTool.trim()]
+                                }
+                              }
+                            }));
+                            setNewTool('');
+                            setShowToolInput(false);
+                          }
+                        }}
+                        className="px-4 py-2 bg-secondary-500 text-white rounded-lg hover:bg-secondary-600 transition-colors"
+                      >
+                        Add
+                      </button>
                     </div>
                   )}
                 </div>
@@ -921,16 +942,37 @@ export function UploadPage() {
                   )}
                   
                   {showSubscriptionInput && (
-                    <div className="mt-2">
+                    <div className="mt-2 flex gap-2">
                       <input
                         ref={subscriptionInputRef}
                         type="text"
                         value={newSubscription}
                         onChange={(e) => setNewSubscription(e.target.value)}
-                        onKeyDown={handleNewSubscriptionKeyDown}
-                        placeholder="Type and press Enter"
-                        className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
+                        placeholder="Type subscription name"
+                        className="flex-1 bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
                       />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (newSubscription.trim()) {
+                            setFormData(prev => ({
+                              ...prev,
+                              how_to_make_it_work: {
+                                ...prev.how_to_make_it_work,
+                                prerequisites: {
+                                  ...prev.how_to_make_it_work.prerequisites,
+                                  subscriptions: [...prev.how_to_make_it_work.prerequisites.subscriptions, newSubscription.trim()]
+                                }
+                              }
+                            }));
+                            setNewSubscription('');
+                            setShowSubscriptionInput(false);
+                          }
+                        }}
+                        className="px-4 py-2 bg-secondary-500 text-white rounded-lg hover:bg-secondary-600 transition-colors"
+                      >
+                        Add
+                      </button>
                     </div>
                   )}
                 </div>
@@ -971,16 +1013,37 @@ export function UploadPage() {
                   )}
                   
                   {showSkillInput && (
-                    <div className="mt-2">
+                    <div className="mt-2 flex gap-2">
                       <input
                         ref={skillInputRef}
                         type="text"
                         value={newSkill}
                         onChange={(e) => setNewSkill(e.target.value)}
-                        onKeyDown={handleNewSkillKeyDown}
-                        placeholder="Type and press Enter"
-                        className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
+                        placeholder="Type skill name"
+                        className="flex-1 bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
                       />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (newSkill.trim()) {
+                            setFormData(prev => ({
+                              ...prev,
+                              how_to_make_it_work: {
+                                ...prev.how_to_make_it_work,
+                                prerequisites: {
+                                  ...prev.how_to_make_it_work.prerequisites,
+                                  skills: [...prev.how_to_make_it_work.prerequisites.skills, newSkill.trim()]
+                                }
+                              }
+                            }));
+                            setNewSkill('');
+                            setShowSkillInput(false);
+                          }
+                        }}
+                        className="px-4 py-2 bg-secondary-500 text-white rounded-lg hover:bg-secondary-600 transition-colors"
+                      >
+                        Add
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1483,65 +1546,222 @@ export function UploadPage() {
         {currentStep === 2 && (
           <div className="space-y-6">
             <div className="bg-white rounded-xl border border-surface-200 shadow-card p-6">
-              <h2 className="text-xl font-bold mb-4">Review Your Submission</h2>
+              <h2 className="text-xl font-bold mb-6 text-surface-900">Review Your Submission</h2>
               
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="col-span-1 text-surface-500">Title</div>
-                  <div className="col-span-2 font-medium">{formData.title}</div>
+              <div className="space-y-6">
+                {/* Basic Information */}
+                <div className="bg-surface-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4 text-surface-800">Basic Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-surface-500 mb-1">Title</p>
+                      <p className="font-medium text-surface-900">{formData.title}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-surface-500 mb-1">Price</p>
+                      <p className="font-medium text-surface-900">${formData.price}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-surface-500 mb-1">Category</p>
+                      <p className="font-medium text-surface-900 capitalize">{formData.category}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-surface-500 mb-1">Complexity</p>
+                      <p className="font-medium text-surface-900 capitalize">{formData.complexity}</p>
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="col-span-1 text-surface-500">Description</div>
-                  <div className="col-span-2">{formData.description}</div>
+
+                {/* Description */}
+                <div className="bg-surface-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4 text-surface-800">Description</h3>
+                  <p className="text-surface-700 whitespace-pre-wrap">{formData.description}</p>
                 </div>
-                
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="col-span-1 text-surface-500">Price</div>
-                  <div className="col-span-2">${formData.price}</div>
-                </div>
-                
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="col-span-1 text-surface-500">Category</div>
-                  <div className="col-span-2 capitalize">{formData.category}</div>
-                </div>
-                
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="col-span-1 text-surface-500">Tags</div>
-                  <div className="col-span-2">
+
+                {/* Tags */}
+                <div className="bg-surface-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4 text-surface-800">Tags</h3>
+                  <div className="flex flex-wrap gap-2">
                     {formData.tags.split(',').map((tag, index) => (
-                      <span key={index} className="inline-block bg-surface-100 text-surface-700 px-2 py-1 rounded-full text-xs mr-2 mb-2">
+                      <span key={index} className="px-3 py-1 bg-surface-200 text-surface-700 rounded-full text-sm">
                         {tag.trim()}
                       </span>
                     ))}
                   </div>
                 </div>
-                
-                {formData.requirements.length > 0 && (
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="col-span-1 text-surface-500">Requirements</div>
-                    <div className="col-span-2">
-                      {formData.requirements.map((req, index) => (
-                        <span key={index} className="inline-block bg-surface-100 text-surface-700 px-2 py-1 rounded-full text-xs mr-2 mb-2">
-                          {req}
-                        </span>
-                      ))}
+
+                {/* Requirements & Integrations */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-surface-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 text-surface-800">Requirements</h3>
+                    {formData.requirements.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {formData.requirements.map((req, index) => (
+                          <span key={index} className="px-3 py-1 bg-surface-200 text-surface-700 rounded-full text-sm">
+                            {req}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-surface-500 italic">No requirements specified</p>
+                    )}
+                  </div>
+
+                  <div className="bg-surface-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 text-surface-800">Integrations</h3>
+                    {formData.integrations.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {formData.integrations.map((integration, index) => (
+                          <span key={index} className="px-3 py-1 bg-surface-200 text-surface-700 rounded-full text-sm">
+                            {integration}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-surface-500 italic">No integrations specified</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Media Files */}
+                <div className="bg-surface-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4 text-surface-800">Media Files</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-surface-500 mb-2">Thumbnail</p>
+                      {formData.image && (
+                        <img src={formData.image} alt="Thumbnail" className="w-full h-48 object-cover rounded-lg" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm text-surface-500 mb-2">Blueprint</p>
+                      {formData.bluePrint && (
+                        <div className="flex items-center justify-center h-48 bg-surface-100 rounded-lg">
+                          <FolderOpen className="w-12 h-12 text-surface-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-surface-500 mb-2">Demo Video</p>
+                      {formData.demoVideo && (
+                        <div className="flex items-center justify-center h-48 bg-surface-100 rounded-lg">
+                          <Video className="w-12 h-12 text-surface-400" />
+                        </div>
+                      )}
                     </div>
                   </div>
-                )}
-                
-                {formData.integrations.length > 0 && (
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="col-span-1 text-surface-500">Integrations</div>
-                    <div className="col-span-2">
-                      {formData.integrations.map((integration, index) => (
-                        <span key={index} className="inline-block bg-surface-100 text-surface-700 px-2 py-1 rounded-full text-xs mr-2 mb-2">
-                          {integration}
-                        </span>
-                      ))}
+                </div>
+
+                {/* How to Make It Work */}
+                <div className="bg-surface-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4 text-surface-800">How to Make It Work</h3>
+                  
+                  {/* Prerequisites */}
+                  <div className="mb-4">
+                    <h4 className="font-medium mb-2 text-surface-700">Prerequisites</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-sm text-surface-500 mb-1">Tools</p>
+                        {formData.how_to_make_it_work.prerequisites.tools.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {formData.how_to_make_it_work.prerequisites.tools.map((tool, index) => (
+                              <span key={index} className="px-2 py-1 bg-surface-200 text-surface-700 rounded-full text-xs">
+                                {tool}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-surface-500 italic text-sm">No tools specified</p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm text-surface-500 mb-1">Subscriptions</p>
+                        {formData.how_to_make_it_work.prerequisites.subscriptions.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {formData.how_to_make_it_work.prerequisites.subscriptions.map((sub, index) => (
+                              <span key={index} className="px-2 py-1 bg-surface-200 text-surface-700 rounded-full text-xs">
+                                {sub}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-surface-500 italic text-sm">No subscriptions specified</p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm text-surface-500 mb-1">Skills</p>
+                        {formData.how_to_make_it_work.prerequisites.skills.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {formData.how_to_make_it_work.prerequisites.skills.map((skill, index) => (
+                              <span key={index} className="px-2 py-1 bg-surface-200 text-surface-700 rounded-full text-xs">
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-surface-500 italic text-sm">No skills specified</p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                )}
+
+                  {/* Difficulty Level */}
+                  <div className="mb-4">
+                    <h4 className="font-medium mb-2 text-surface-700">Difficulty Level</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-surface-500 mb-1">Level</p>
+                        <p className="font-medium capitalize">{formData.how_to_make_it_work.difficulty_level.level}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-surface-500 mb-1">Setup Time</p>
+                        <p className="font-medium">{formData.how_to_make_it_work.difficulty_level.setupTime}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-surface-500 mb-1">Learning Curve</p>
+                        <p className="font-medium">{formData.how_to_make_it_work.difficulty_level.learningCurve}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-surface-500 mb-1">Technical Requirements</p>
+                        <p className="font-medium">{formData.how_to_make_it_work.difficulty_level.technicalRequirements}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Setup Process */}
+                  <div className="mb-4">
+                    <h4 className="font-medium mb-2 text-surface-700">Setup Process</h4>
+                    {formData.how_to_make_it_work.setup_process.length > 0 ? (
+                      <div className="space-y-2">
+                        {formData.how_to_make_it_work.setup_process.map((step, index) => (
+                          <div key={index} className="bg-surface-100 p-3 rounded-lg">
+                            <p className="font-medium text-surface-800">{step.title}</p>
+                            <p className="text-sm text-surface-600">{step.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-surface-500 italic text-sm">No setup steps specified</p>
+                    )}
+                  </div>
+
+                  {/* Common Issues */}
+                  <div>
+                    <h4 className="font-medium mb-2 text-surface-700">Common Issues</h4>
+                    {formData.how_to_make_it_work.common_issues.length > 0 ? (
+                      <div className="space-y-2">
+                        {formData.how_to_make_it_work.common_issues.map((issue, index) => (
+                          <div key={index} className="bg-surface-100 p-3 rounded-lg">
+                            <p className="font-medium text-surface-800">{issue.title}</p>
+                            <p className="text-sm text-surface-600">{issue.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-surface-500 italic text-sm">No common issues specified</p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
             
