@@ -11,10 +11,53 @@ import { toast } from 'react-hot-toast';
 // Sample registered users for demonstration
 
 interface Creator {
-  id?: string;
+  id: string;
   email: string;
   bio: string;
   isUnclaimed: boolean;
+  name?: string;
+  last_name?: string;
+}
+
+interface Product {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  category: 'automation' | 'integration' | 'workflow';
+  tags: string[];
+  complexity: 'beginner' | 'medium' | 'advanced';
+  integrations: string[];
+  key_features: string[];
+  faq: { question: string; answer: string }[];
+  consultationAvailable: boolean;
+  consultationRate: number | null;
+  status: 'draft' | 'pending' | 'approved' | 'rejected';
+  creator: {
+    creator_name: string;
+    creator_id: string;
+    creator_title?: string;
+    creator_bio?: string;
+  };
+  image: string;
+  bluePrint: string;
+  demoVideo: string;
+  how_to_make_it_work: {
+    prerequisites: {
+      tools: string[];
+      subscriptions: string[];
+      skills: string[];
+    };
+    difficulty_level: {
+      level: 'beginner' | 'medium' | 'advanced';
+      setupTime: string;
+      learningCurve: string;
+      technicalRequirements: string;
+      supportAvailability: string;
+    };
+    setup_process: { title: string; description: string }[];
+    common_issues: { title: string; description: string }[];
+  };
 }
 
 export function AdminAddProductPage() {
@@ -25,7 +68,7 @@ export function AdminAddProductPage() {
   const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
   const [registeredUser, setRegisteredUser] = useState<any[]>([])
   
-  const [newCreator, setNewCreator] = useState<Creator>({
+  const [newCreator, setNewCreator] = useState<Partial<Creator>>({
     name: '',
     last_name: '',
     email: '',
@@ -44,14 +87,14 @@ export function AdminAddProductPage() {
     const requirementInputRef = useRef<HTMLInputElement>(null);
     const integrationInputRef = useRef<HTMLInputElement>(null);
     const {user} = useAuth() 
-    const [image , setImage] = useState(null)
+    const [image, setImage] = useState<string | null>(null);
     const [thumbnail, setThumbnail] = useState<string | null>(null);
     const [videoUrl, setVideoUrl] = useState<string | null>(null); 
     const [zipUrl, setZipUrl] = useState<string | null>(null);
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false)
     const [videoLoading, setVideoLoading] = useState(false)
-    const [demoVideo, setDemoVideo] = useState(false)
+    const [demoVideo, setDemoVideo] = useState<string | null>(null);
     const [newFeature, setNewFeature] = useState('');
 
   // Add new state variables for How to Make It Work section
@@ -148,41 +191,47 @@ export function AdminAddProductPage() {
   user.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleSelectUser = (user) => {
+  const handleSelectUser = (user: any) => {
     setSelectedCreator({
       id: user.id,
       email: user.email,
-      isUnclaimed: false
+      bio: user.bio || '',
+      isUnclaimed: false,
+      name: user.name,
+      last_name: user.last_name
     });
     setShowCreatorSearch(false);
   };
 
   const handleCreateNewCreator = async () => {
     try {
+      const randomPassword = Math.random().toString(36).slice(-8);
+      
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newCreator.email,
-        password: Math.random().toString(36).slice(-8),
+        email: newCreator.email || '',
+        password: randomPassword,
         options: {
           data: {
-            first_name: newCreator.name,
-            last_name: newCreator.last_name,
-            bio: newCreator.bio,
+            first_name: newCreator.name || '',
+            last_name: newCreator.last_name || '',
+            bio: newCreator.bio || '',
             role: 'creator'
           }
         }
       });
 
-      if (authError) throw authError;
+      if (authError || !authData.user) throw authError;
 
+      // Insert the creator into the users table
       const { data: creatorData, error: creatorError } = await supabase
         .from('users')
         .insert([
           {
-            id: authData.user?.id,
-            name: newCreator.name,
-            last_name: newCreator.last_name,
-            email: newCreator.email,
-            bio: newCreator.bio,
+            id: authData.user.id,
+            name: newCreator.name || '',
+            last_name: newCreator.last_name || '',
+            email: newCreator.email || '',
+            bio: newCreator.bio || '',
           }
         ])
         .select()
@@ -193,7 +242,7 @@ export function AdminAddProductPage() {
       setRegisteredUser(prevUsers => [...prevUsers, creatorData]);
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        newCreator.email,
+        newCreator.email || '',
         {
           redirectTo: `${window.location.origin}/reset-password`
         }
@@ -207,7 +256,8 @@ export function AdminAddProductPage() {
         name: '',
         last_name: '',
         email: '',
-        bio: ''
+        bio: '',
+        isUnclaimed: true
       });
     } catch (error) {
       console.error('Error creating creator:', error);
@@ -346,17 +396,17 @@ export function AdminAddProductPage() {
       return null;
     }
   
-    const { data: publicURL, error: urlError } = await supabase.storage
+    const { data } = await supabase.storage
       .from('solutions-images')
       .getPublicUrl(fileName);
       
-      if (urlError) {
-        console.error('Error getting public URL:', urlError);
-        return null;
-      }
+    if (!data) {
+      console.error('Error getting public URL');
+      return null;
+    }
       
-    setImage(publicURL.publicUrl)
-    return publicURL.publicUrl;
+    setImage(data.publicUrl)
+    return data.publicUrl;
   };
   const sanitizeFileName = (name: string) => {
     return name
@@ -382,28 +432,28 @@ export function AdminAddProductPage() {
       return null;
     }
   
-    const { data: publicURL, error: urlError } = await supabase.storage
+    const { data } = await supabase.storage
       .from('solutions-images')
       .getPublicUrl(fileName);
       
-      if (urlError) {
-        console.error('Error getting public URL:', urlError);
+      if (!data) {
+        console.error('Error getting public URL');
         return null;
       }
       
       if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(extension)) {
-        setThumbnail(publicURL.publicUrl);
+        setThumbnail(data.publicUrl);
         console.log("thumbnail");
       } else if (['.mp4', '.mov', '.webm'].includes(extension)) {
-        setVideoUrl(publicURL.publicUrl);
+        setVideoUrl(data.publicUrl);
         console.log("mov");
       } else if (extension === '.zip') {
-        setZipUrl(publicURL.publicUrl);
+        setZipUrl(data.publicUrl);
         console.log("zip");
       } else {
         console.warn("Unsupported file type");
       }
-    return publicURL.publicUrl;
+    return data.publicUrl;
     }catch(error){
       console.log("Error", error);
     }finally{
@@ -411,7 +461,7 @@ export function AdminAddProductPage() {
     }
   }
 
-  const uploadDemoVideo = async (file: file) =>{
+  const uploadDemoVideo = async (file: File) =>{
         const dotIndex = file.name.lastIndexOf('.');
         const rawName = file.name.substring(0, dotIndex);
         const extension = file.name.substring(dotIndex);
@@ -429,16 +479,16 @@ export function AdminAddProductPage() {
           return null;
         }
       
-        const { data: publicURL, error: urlError } = await supabase.storage
+        const { data } = await supabase.storage
           .from('solutions-images')
           .getPublicUrl(fileName);
           
-          if (urlError) {
-            console.error('Error getting public URL:', urlError);
+          if (!data) {
+            console.error('Error getting public URL');
             return null;
           }
           setDemoVideo(file.name)
-          return publicURL.publicUrl;
+          return data.publicUrl;
         }
         catch(error){
           console.log("Error", error);
@@ -822,7 +872,7 @@ const handleFileInput = async (type: string, e: React.ChangeEvent<HTMLInputEleme
                       <button
                         type="button"
                         onClick={handleCreateNewCreator}
-                        disabled={!newCreator.name.trim() || !newCreator.last_name.trim() || !newCreator.email.trim() || !newCreator.bio.trim()}
+                        disabled={!newCreator.name?.trim() || !newCreator.last_name?.trim() || !newCreator.email?.trim() || !newCreator.bio?.trim()}
                         className="flex-1 px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Create Creator
@@ -1641,9 +1691,11 @@ const handleFileInput = async (type: string, e: React.ChangeEvent<HTMLInputEleme
                 </div>
               )}
               {file && (
-                <div className="flex flex-col items-center  h-full justify-center p-6 bg-surface-50 rounded-lg border border-surface-200">
+                <div className="flex flex-col items-center h-full justify-center p-6 bg-surface-50 rounded-lg border border-surface-200">
                   <FolderOpen className="w-12 h-12 text-green-500 mb-2" />
-                    <p className="font-medium text-surface-700 mt-2 text-center">{file.split('/').pop()}</p>
+                    <p className="font-medium text-surface-700 mt-2 text-center">
+                      {typeof file === 'string' ? file.split('/').pop() : 'File uploaded'}
+                    </p>
                     <p className="text-sm text-surface-500 my-5">Your file has been uploaded</p>
                 </div>
               )}

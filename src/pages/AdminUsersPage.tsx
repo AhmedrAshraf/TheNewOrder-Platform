@@ -1,77 +1,110 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Users, Search, Filter, ChevronDown, ChevronUp, MoreHorizontal,
-  UserPlus, Mail, Shield, Ban, Eye, Download, Trash, Edit, XCircle
-} from 'lucide-react';
+import { Search, Filter, ChevronDown, ChevronUp, UserPlus, Shield, Download, XCircle } from 'lucide-react';
 import { AdminNav } from '../components/AdminNav';
 import type { AuthState } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
+import { toast } from 'react-hot-toast';
 
-interface AdminUsersPageProps {
-  user: AuthState;
+interface User {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  created_at: string;
+  full_name: string;
+  workflows: number;
+  purchases: number;
+  revenue: number;
 }
-
-// Sample users for demonstration
-const SAMPLE_USERS = [
-  { 
-    id: '1', 
-    name: 'John Doe', 
-    email: 'john.doe@example.com',
-    role: 'user',
-    status: 'active',
-    workflows: 3,
-    purchases: 12,
-    revenue: 1245,
-    joinedAt: '2025-01-15T10:30:00Z'
-  },
-  { 
-    id: '2', 
-    name: 'Jane Smith', 
-    email: 'jane.smith@example.com',
-    role: 'user',
-    status: 'active',
-    workflows: 5,
-    purchases: 8,
-    revenue: 2340,
-    joinedAt: '2025-02-20T14:45:00Z'
-  },
-  { 
-    id: '3', 
-    name: 'Admin User', 
-    email: 'admin@example.com',
-    role: 'admin',
-    status: 'active',
-    workflows: 0,
-    purchases: 0,
-    revenue: 0,
-    joinedAt: '2024-12-01T09:00:00Z'
-  },
-  { 
-    id: '4', 
-    name: 'Bob Johnson', 
-    email: 'bob.johnson@example.com',
-    role: 'user',
-    status: 'inactive',
-    workflows: 1,
-    purchases: 5,
-    revenue: 895,
-    joinedAt: '2025-03-10T11:20:00Z'
-  }
-];
 
 export function AdminUsersPage() {
   const { user } = useAuth();
-  const [users, setUsers] = useState(SAMPLE_USERS);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState('newest');
-  const [selectedUser, setSelectedUser] = useState<typeof SAMPLE_USERS[0] | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchUsers();
+  }, [user]);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      
+      const { data: profiles, error: profilesError } = await supabase
+        .from('users')
+        .select('*');
+
+      if (profilesError) throw profilesError;
+
+      const { data: allSolutions, error: solutionsError } = await supabase
+        .from('solutions')
+        .select('user_id');
+
+      if (solutionsError) throw solutionsError;
+
+      const solutionsCount: Record<string, number> = {};
+      allSolutions?.forEach(solution => {
+        const userId = solution.user_id;
+        solutionsCount[userId] = (solutionsCount[userId] || 0) + 1;
+      });
+
+      const { data: allOrders, error: ordersError } = await supabase
+        .from('orders')
+        .select('user_id, amount');
+
+      if (ordersError) throw ordersError;
+
+      const ordersData: Record<string, { count: number, total: number }> = {};
+      allOrders?.forEach(order => {
+        const userId = order.user_id;
+        if (!ordersData[userId]) {
+          ordersData[userId] = { count: 0, total: 0 };
+        }
+        ordersData[userId].count += 1;
+        // Convert amount to number and add it to the total
+        const amount = typeof order.amount === 'string' ? parseFloat(order.amount) : (order.amount || 0);
+        ordersData[userId].total += amount;
+      });
+
+      // Combine the data
+      const combinedUsers = profiles.map(profile => {
+        const userId = profile.id;
+        const userSolutions = solutionsCount[userId] || 0;
+        const userOrders = ordersData[userId] || { count: 0, total: 0 };
+
+        return {
+          id: profile.id,
+          email: profile.email,
+          role: profile.role || 'user',
+          status: profile.status || 'active',
+          created_at: profile.created_at,
+          full_name: profile.name && profile.last_name ? `${profile.name} ${profile.last_name}` : 'Unknown User',
+          workflows: userSolutions,
+          purchases: userOrders.count,
+          revenue: userOrders.total
+        };
+      });
+
+      setUsers(combinedUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error('Failed to load users');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   // Redirect if not admin
   if (!user || user.role !== 'admin') {
@@ -96,7 +129,7 @@ export function AdminUsersPage() {
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesRole = filterRole === 'all' || user.role === filterRole;
@@ -108,13 +141,13 @@ export function AdminUsersPage() {
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     switch (sortBy) {
       case 'newest':
-        return new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime();
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       case 'oldest':
-        return new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime();
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       case 'name-asc':
-        return a.name.localeCompare(b.name);
+        return a.full_name.localeCompare(b.full_name);
       case 'name-desc':
-        return b.name.localeCompare(a.name);
+        return b.full_name.localeCompare(a.full_name);
       case 'revenue-high':
         return b.revenue - a.revenue;
       case 'revenue-low':
@@ -162,6 +195,7 @@ export function AdminUsersPage() {
     setShowActionMenu(null);
   };
 
+
   const getUserStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -175,7 +209,6 @@ export function AdminUsersPage() {
     }
   };
 
-  // Add the missing toggleActionMenu function
   const toggleActionMenu = (userId: string) => {
     setShowActionMenu(showActionMenu === userId ? null : userId);
   };
@@ -274,6 +307,12 @@ export function AdminUsersPage() {
 
           {/* Users Table */}
           <div className="bg-white rounded-xl border border-surface-200 shadow-card overflow-hidden">
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-secondary-500 mx-auto"></div>
+              <p className="mt-4 text-surface-500">Loading users...</p>
+            </div>
+          ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -285,7 +324,7 @@ export function AdminUsersPage() {
                     <th className="text-right py-3 px-4">Purchases</th>
                     <th className="text-right py-3 px-4">Revenue</th>
                     <th className="text-right py-3 px-4">Joined</th>
-                    <th className="text-right py-3 px-4">Actions</th>
+                    {/* <th className="text-right py-3 px-4">Actions</th> */}
                   </tr>
                 </thead>
                 <tbody>
@@ -295,11 +334,11 @@ export function AdminUsersPage() {
                         <div className="flex items-center gap-3">
                           <div className="bg-secondary-500 rounded-full w-8 h-8 flex items-center justify-center">
                             <span className="text-white font-semibold">
-                              {user?.name?.charAt(0).toUpperCase()}
+                              {user?.full_name?.charAt(0).toUpperCase()}
                             </span>
                           </div>
                           <div>
-                            <p className="font-medium">{user.name}</p>
+                            <p className="font-medium">{user.full_name}</p>
                             <p className="text-sm text-surface-500">{user.email}</p>
                           </div>
                         </div>
@@ -320,9 +359,9 @@ export function AdminUsersPage() {
                       <td className="text-right py-3 px-4">{user.purchases}</td>
                       <td className="text-right py-3 px-4">${user.revenue}</td>
                       <td className="text-right py-3 px-4">
-                        {new Date(user.joinedAt).toLocaleDateString()}
+                        {new Date(user.created_at).toLocaleDateString()}
                       </td>
-                      <td className="text-right py-3 px-4 relative">
+                      {/* <td className="text-right py-3 px-4 relative">
                         <button
                           onClick={() => toggleActionMenu(user.id)}
                           className="p-1 hover:bg-surface-100 rounded-full"
@@ -395,14 +434,15 @@ export function AdminUsersPage() {
                             </button>
                           </div>
                         )}
-                      </td>
+                      </td> */}
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+          )}
             
-            {sortedUsers.length === 0 && (
+            {!loading && sortedUsers.length === 0 && (
               <div className="p-8 text-center text-surface-500">
                 No users found matching your filters.
               </div>
