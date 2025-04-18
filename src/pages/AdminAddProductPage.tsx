@@ -891,6 +891,11 @@ const handleFileInput = async (type: string, e: React.ChangeEvent<HTMLInputEleme
                   type="text"
                   value={formData.tags}
                   onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                    }
+                  }}
                   className="w-full bg-surface-50 border border-surface-200 rounded-xl py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
                   placeholder="Enter tags separated by commas"
                   required

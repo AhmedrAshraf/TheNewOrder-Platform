@@ -662,6 +662,11 @@ export function UploadPage() {
                   onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
                   className="w-full bg-surface-50 border border-surface-200 rounded-xl py-2 px-4 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20"
                   placeholder="Enter tags separated by commas"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                    }
+                  }}
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">Enter tags separated by commas</p>
