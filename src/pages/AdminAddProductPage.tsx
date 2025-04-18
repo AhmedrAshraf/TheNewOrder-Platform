@@ -6,12 +6,13 @@ import { AdminNav } from '../components/AdminNav';
 import type { AuthState } from '../types';
 import { useAuth } from "../context/AuthContext";
 import { supabase } from '../lib/supabase';
+import { toast } from 'react-hot-toast';
 
 // Sample registered users for demonstration
 
 interface Creator {
   id?: string;
-  username: string;
+  email: string;
   bio: string;
   isUnclaimed: boolean;
 }
@@ -25,9 +26,9 @@ export function AdminAddProductPage() {
   const [registeredUser, setRegisteredUser] = useState<any[]>([])
   
   const [newCreator, setNewCreator] = useState<Creator>({
-    firstName: '',
-    lastName: '',
-    username: '',
+    name: '',
+    last_name: '',
+    email: '',
     bio: '',
     isUnclaimed: true
   });
@@ -152,17 +153,70 @@ export function AdminAddProductPage() {
   
     setSelectedCreator({
       id: user.id,
-      username: user.email.split('@')[0],
+      email: user.email,
       bio: '',
       isUnclaimed: false
     });
     setShowCreatorSearch(false);
   };
 
-  const handleCreateNewCreator = () => {
-    setShowNewCreatorForm(false);
-  };
+  const handleCreateNewCreator = async () => {
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newCreator.email,
+        password: Math.random().toString(36).slice(-8),
+        options: {
+          data: {
+            first_name: newCreator.name,
+            last_name: newCreator.last_name,
+            bio: newCreator.bio,
+            role: 'creator'
+          }
+        }
+      });
 
+      if (authError) throw authError;
+
+      const { data: creatorData, error: creatorError } = await supabase
+        .from('users')
+        .insert([
+          {
+            id: authData.user?.id,
+            name: newCreator.name,
+            last_name: newCreator.last_name,
+            email: newCreator.email,
+            bio: newCreator.bio,
+          }
+        ])
+        .select()
+        .single();
+
+      if (creatorError) throw creatorError;
+
+      setRegisteredUser(prevUsers => [...prevUsers, creatorData]);
+
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        newCreator.email,
+        {
+          redirectTo: `${window.location.origin}/reset-password`
+        }
+      );
+
+      if (resetError) throw resetError;
+
+      toast.success('Creator account created successfully! Verification email sent.');
+      setShowNewCreatorForm(false);
+      setNewCreator({
+        name: '',
+        last_name: '',
+        email: '',
+        bio: ''
+      });
+    } catch (error) {
+      console.error('Error creating creator:', error);
+      toast.error('Failed to create creator account. Please try again.');
+    }
+  };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -688,8 +742,8 @@ const handleFileInput = async (type: string, e: React.ChangeEvent<HTMLInputEleme
                           <User className="h-5 w-5 text-surface-600" />
                         </div>
                         <div>
-                          <p className="font-medium">{selectedCreator.firstName} {selectedCreator.lastName}</p>
-                          <p className="text-sm text-surface-500">@{selectedCreator.username}</p>
+                          <p className="font-medium">{selectedCreator.name} {selectedCreator.last_name}</p>
+                          <p className="text-sm text-surface-500">@{selectedCreator.email}</p>
                           {selectedCreator.isUnclaimed && (
                             <div className="flex items-center gap-1 text-sm text-yellow-600">
                               <AlertCircle className="h-4 w-4" />
@@ -720,8 +774,8 @@ const handleFileInput = async (type: string, e: React.ChangeEvent<HTMLInputEleme
                         <label className="block text-sm font-medium mb-2">First Name</label>
                         <input
                           type="text"
-                          value={newCreator.firstName}
-                          onChange={(e) => setNewCreator({ ...newCreator, firstName: e.target.value })}
+                          value={newCreator.name}
+                          onChange={(e) => setNewCreator({ ...newCreator, name: e.target.value })}
                           placeholder="Enter first name"
                           className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500"
                         />
@@ -730,8 +784,8 @@ const handleFileInput = async (type: string, e: React.ChangeEvent<HTMLInputEleme
                         <label className="block text-sm font-medium mb-2">Last Name</label>
                         <input
                           type="text"
-                          value={newCreator.lastName}
-                          onChange={(e) => setNewCreator({ ...newCreator, lastName: e.target.value })}
+                          value={newCreator.last_name}
+                          onChange={(e) => setNewCreator({ ...newCreator, last_name: e.target.value })}
                           placeholder="Enter last name"
                           className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500"
                         />
@@ -739,17 +793,14 @@ const handleFileInput = async (type: string, e: React.ChangeEvent<HTMLInputEleme
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-2">Username</label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2 text-surface-400">@</span>
-                        <input
-                          type="text"
-                          value={newCreator.username}
-                          onChange={(e) => setNewCreator({ ...newCreator, username: e.target.value })}
-                          placeholder="Enter username"
-                          className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 pl-8 focus:outline-none focus:border-secondary-500"
-                        />
-                      </div>
+                      <label className="block text-sm font-medium mb-2">Email</label>
+                      <input
+                        type="email"
+                        value={newCreator.email}
+                        onChange={(e) => setNewCreator({ ...newCreator, email: e.target.value })}
+                        placeholder="Enter email address"
+                        className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500"
+                      />
                     </div>
                     
                     <div>
@@ -780,7 +831,7 @@ const handleFileInput = async (type: string, e: React.ChangeEvent<HTMLInputEleme
                       <button
                         type="button"
                         onClick={handleCreateNewCreator}
-                        disabled={!newCreator.firstName.trim() || !newCreator.lastName.trim() || !newCreator.username.trim() || !newCreator.bio.trim()}
+                        disabled={!newCreator.name.trim() || !newCreator.last_name.trim() || !newCreator.email.trim() || !newCreator.bio.trim()}
                         className="flex-1 px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Create Creator
