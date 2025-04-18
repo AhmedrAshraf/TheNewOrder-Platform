@@ -32,20 +32,30 @@ export function AdminUsersPage() {
   const [showUserModal, setShowUserModal] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
   const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [pageSize] = useState(5);
 
   useEffect(() => {
     fetchUsers();
   }, [user]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = currentPage) => {
     try {
       setLoading(true);
       
-      const { data: profiles, error: profilesError } = await supabase
+      const offset = (page - 1) * pageSize;
+      
+      const { data: profiles, error: profilesError, count } = await supabase
         .from('users')
-        .select('*');
+        .select('*', { count: 'exact' })
+        .range(offset, offset + pageSize - 1);
 
       if (profilesError) throw profilesError;
+      
+      if (count !== null) {
+        setTotalUsers(count);
+      }
 
       const { data: allSolutions, error: solutionsError } = await supabase
         .from('solutions')
@@ -72,12 +82,10 @@ export function AdminUsersPage() {
           ordersData[userId] = { count: 0, total: 0 };
         }
         ordersData[userId].count += 1;
-        // Convert amount to number and add it to the total
         const amount = typeof order.amount === 'string' ? parseFloat(order.amount) : (order.amount || 0);
         ordersData[userId].total += amount;
       });
 
-      // Combine the data
       const combinedUsers = profiles.map(profile => {
         const userId = profile.id;
         const userSolutions = solutionsCount[userId] || 0;
@@ -105,6 +113,17 @@ export function AdminUsersPage() {
     }
   };
 
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > Math.ceil(totalUsers / pageSize)) return;
+    setCurrentPage(newPage);
+    fetchUsers(newPage);
+  };
+
+  const totalPages = Math.ceil(totalUsers / pageSize);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [currentPage]);
 
   // Redirect if not admin
   if (!user || user.role !== 'admin') {
@@ -216,7 +235,7 @@ export function AdminUsersPage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-4">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold font-poppins text-surface-900">User Management</h1>
@@ -449,25 +468,60 @@ export function AdminUsersPage() {
             )}
           </div>
 
-          {/* Pagination */}
+          {/* Pagination Controls */}
           <div className="flex items-center justify-between mt-6">
             <p className="text-sm text-surface-500">
-              Showing {sortedUsers.length} of {users.length} users
+              Showing {users.length} of {totalUsers} users
             </p>
             <div className="flex gap-2">
-              <button className="px-3 py-1 bg-surface-50 hover:bg-surface-100 rounded-lg transition-colors">
+              <button 
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded-lg transition-colors ${
+                  currentPage === 1 
+                    ? 'bg-surface-100 text-surface-400 cursor-not-allowed' 
+                    : 'bg-surface-50 hover:bg-surface-100'
+                }`}
+              >
                 Previous
               </button>
-              <button className="px-3 py-1 bg-secondary-500 text-white rounded-lg">
-                1
-              </button>
-              <button className="px-3 py-1 bg-surface-50 hover:bg-surface-100 rounded-lg transition-colors">
-                2
-              </button>
-              <button className="px-3 py-1 bg-surface-50 hover:bg-surface-100 rounded-lg transition-colors">
-                3
-              </button>
-              <button className="px-3 py-1 bg-surface-50 hover:bg-surface-100 rounded-lg transition-colors">
+              
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                return (
+                  <button 
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`px-3 py-1 rounded-lg ${
+                      currentPage === pageNum 
+                        ? 'bg-secondary-500 text-white' 
+                        : 'bg-surface-50 hover:bg-surface-100'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+              
+              <button 
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1 rounded-lg transition-colors ${
+                  currentPage === totalPages 
+                    ? 'bg-surface-100 text-surface-400 cursor-not-allowed' 
+                    : 'bg-surface-50 hover:bg-surface-100'
+                }`}
+              >
                 Next
               </button>
             </div>
