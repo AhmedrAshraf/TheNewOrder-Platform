@@ -38,7 +38,7 @@ export function Navbar({
         .from('messages')
         .select('*', { count: 'exact' })
         .eq('is_read', false)
-        .neq('sender_id', user.id);
+        .eq('sender_id', user.id);
   
       if (!error && data) {
         setUnreadCount(data.length);
