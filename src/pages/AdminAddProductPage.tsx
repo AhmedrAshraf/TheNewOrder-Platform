@@ -149,12 +149,9 @@ export function AdminAddProductPage() {
   );
 
   const handleSelectUser = (user) => {
-  console.log("user name handleSelectUser", user);
-  
     setSelectedCreator({
       id: user.id,
       email: user.email,
-      bio: '',
       isUnclaimed: false
     });
     setShowCreatorSearch(false);
@@ -760,12 +757,6 @@ const handleFileInput = async (type: string, e: React.ChangeEvent<HTMLInputEleme
                         <X className="h-5 w-5" />
                       </button>
                     </div>
-                    <textarea
-                    value={selectedCreator.bio}
-                    onChange={(e) => setSelectedCreator({ ...selectedCreator, bio: e.target.value })}
-                      placeholder="Enter creator bio..."
-                      className="w-full bg-surface-50 border border-surface-200 rounded-lg py-2 px-4 focus:outline-none focus:border-secondary-500 h-32"
-                    />
                   </div>
                 ) : (
                   <div className="space-y-4">
