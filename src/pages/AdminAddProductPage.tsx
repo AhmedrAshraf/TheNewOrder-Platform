@@ -1771,7 +1771,7 @@ const handleFileInput = async (type: string, e: React.ChangeEvent<HTMLInputEleme
                 type="submit"
                 className="w-full bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-xl py-3 px-4 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 font-medium"
               >
-                Continue Solution <ArrowRight className="h-4 w-4" />
+                Save Solution <ArrowRight className="h-4 w-4" />
               </button>
             </div>
             </form>
