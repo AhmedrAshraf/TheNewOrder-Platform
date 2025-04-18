@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, Calendar, DollarSign, User, FileArchive, CheckCircle, Download, Clock, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Package, Calendar, DollarSign, User, FileArchive, CheckCircle, Download, Clock, AlertCircle, FileText, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { format } from 'date-fns';
+import jsPDF from 'jspdf';
 
 // Define types for our data
 interface Solution {
@@ -31,6 +33,7 @@ export function OrderPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
@@ -174,6 +177,61 @@ export function OrderPage() {
     }
   };
 
+  const generateInvoice = () => {
+    setShowInvoiceModal(true);
+  };
+
+  const downloadInvoice = () => {
+    const doc = new jsPDF();
+    
+    // Add company logo/header
+    doc.setFontSize(20);
+    doc.text('INVOICE', 105, 20, { align: 'center' });
+    
+    // Add order details
+    doc.setFontSize(12);
+    doc.text('Order ID:', 20, 40);
+    doc.text(String(order?.id || ''), 60, 40);
+    doc.text('Date:', 120, 40);
+    doc.text(String(orderDate), 140, 40);
+    
+    // Add billing information
+    doc.text('Bill To:', 20, 60);
+    doc.text(String(user?.email || ''), 20, 70);
+    
+    // Add item details
+    doc.text('Item Details:', 20, 90);
+    doc.setFontSize(10);
+    doc.text('Product:', 20, 100);
+    doc.text(String(order?.solution?.title || 'Unknown Product'), 60, 100);
+    
+    // Add payment summary
+    doc.setFontSize(12);
+    doc.text('Payment Summary:', 20, 130);
+    doc.setFontSize(10);
+    doc.text('Subtotal:', 20, 140);
+    doc.text(`$${String(Number(order?.amount || 0).toLocaleString())}`, 60, 140);
+    doc.text('Tax:', 20, 150);
+    doc.text('$0.00', 60, 150);
+    doc.setFontSize(12);
+    doc.text('Total:', 20, 160);
+    doc.text(`$${String(Number(order?.amount || 0).toLocaleString())}`, 60, 160);
+    
+    // Add payment status
+    doc.setFontSize(10);
+    doc.text('Payment Status:', 20, 180);
+    doc.text(String(order?.payment_status || 'N/A'), 60, 180);
+    doc.text('Payment Method:', 20, 190);
+    doc.text(String(order?.payment_method || 'N/A'), 60, 190);
+    
+    // Add footer
+    doc.setFontSize(8);
+    doc.text('Thank you for your business!', 105, 270, { align: 'center' });
+    
+    // Save the PDF
+    doc.save(`invoice-${String(order?.id || '')}.pdf`);
+  };
+
   const statusInfo = getStatusInfo(order.payment_status);
   return (
     <div className="min-h-screen py-20 bg-white">
@@ -194,7 +252,14 @@ export function OrderPage() {
               <h1 className="text-2xl font-bold mb-2">Order Details</h1>
               <p className="text-surface-600">Order ID: {order.id}</p>
             </div>
-            <div className="mt-4 md:mt-0 flex items-center">
+            <div className="mt-4 md:mt-0 flex items-center gap-4">
+              <button
+                onClick={generateInvoice}
+                className="flex items-center px-4 py-2 bg-secondary-500 hover:bg-secondary-600 text-white rounded-lg transition-colors"
+              >
+                <FileText className="h-5 w-5 mr-2" />
+                View Invoice
+              </button>
               <span className={`flex items-center ${statusInfo.color} font-medium`}>
                 <statusInfo.icon className="h-5 w-5 mr-2" />
                 {statusInfo.text}
@@ -347,6 +412,91 @@ export function OrderPage() {
           </button>
         </div>
       </div>
+
+      {/* Invoice Modal */}
+      {showInvoiceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">Invoice</h2>
+              <button
+                onClick={() => setShowInvoiceModal(false)}
+                className="text-surface-500 hover:text-surface-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-medium text-surface-600 mb-2">Order Information</h3>
+                  <p className="text-sm">Order ID: {order?.id}</p>
+                  <p className="text-sm">Date: {orderDate}</p>
+                  <p className="text-sm">Status: {statusInfo.text}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-surface-600 mb-2">Billing Information</h3>
+                  <p className="text-sm">Email: {user?.email}</p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-medium text-surface-600 mb-2">Item Details</h3>
+                <div className="bg-surface-50 rounded-lg p-4">
+                  <div className="flex items-center gap-4">
+                    {order?.solution?.image ? (
+                      <img 
+                        src={order.solution.image} 
+                        alt={order.solution.title} 
+                        className="w-16 h-16 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-lg bg-surface-200 flex items-center justify-center">
+                        <Package className="h-8 w-8 text-surface-400" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium">{order?.solution?.title || 'Unknown Product'}</p>
+                      <p className="text-sm text-surface-600">
+                        {order?.solution?.description || 'No description available'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-medium text-surface-600 mb-2">Payment Summary</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-surface-600">Subtotal</span>
+                    <span>${Number(order?.amount).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-surface-600">Tax</span>
+                    <span>$0.00</span>
+                  </div>
+                  <div className="flex justify-between font-bold border-t border-surface-200 pt-2">
+                    <span>Total</span>
+                    <span>${Number(order?.amount).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end">
+              <button
+                onClick={downloadInvoice}
+                className="flex items-center px-6 py-3 bg-secondary-500 hover:bg-secondary-600 text-white rounded-lg transition-colors"
+              >
+                <Download className="h-5 w-5 mr-2" />
+                Download Invoice
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
