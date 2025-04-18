@@ -5,19 +5,65 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
+interface Solution {
+  id: string;
+  title: string;
+  image?: string;
+  status?: string;
+  created_at?: string;
+  price?: number;
+  user_id?: string;
+}
+
+interface Order {
+  id: string;
+  user_id?: string;
+  creator?: {
+    creator_id?: string;
+  };
+  sellerId?: string;
+  solution_id?: string;
+  amount?: number;
+  created_at?: string;
+  solution?: {
+    title?: string;
+    image?: string;
+    files?: string;
+  };
+}
+
+interface Review {
+  id: string;
+  solution_id: string;
+  rating: number;
+  comment?: string;
+  user_name?: string;
+  user?: {
+    email?: string;
+  };
+}
+
 export function DashboardPage() {
   // All hooks must be called unconditionally at the top level
   const { user, loading } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Order[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
-  const [userList, setUserList] = useState([])
-  const [solution, setSolution] = useState([])
-  const [reviews, setReviews] = useState([]); 
-  const [loadingReviews ,setLoadingReviews] = useState(false)
-  const [totalSpent, setTotalSpent] = useState(null)
+  const [userList, setUserList] = useState<number>(0);
+  const [solution, setSolution] = useState<Solution[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]); 
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [totalSpent, setTotalSpent] = useState<number | null>(null);
   const navigate = useNavigate();
-  const [averageRating, setAverageRating] = useState(null)
-  const [showSellerDashboard, setShowSellerDashboard] = useState(0);
+  const [averageRating, setAverageRating] = useState<number | null>(null);
+  const [showSellerDashboard, setShowSellerDashboard] = useState(false);
+  const [userProducts, setUserProducts] = useState<Order[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<Order[]>([]);
+  const [myRecentsSale, setMyRecentsSale] = useState<Order[]>([]);
+  const [saleCount, setSaleCount] = useState<Order[]>([]);
+
+  const switchToBuyerDashboard = () => {
+    setShowSellerDashboard(false);
+  };
 
   useEffect(() => {
     if (!user?.id) return;
@@ -28,17 +74,19 @@ export function DashboardPage() {
         setLoadingProducts(true);
         setLoadingReviews(true);
 
+        setShowSellerDashboard(false);
+
         // fetch solution 
         const { data: fetchSoltuion, error: fetchSoltuionError } = await supabase
         .from('solutions')
-        .select('')
+        .select('*')
         .eq('user_id', user.id);
         console.log("fetch Soltuion", fetchSoltuion);
         
         if (fetchSoltuionError) throw fetchSoltuionError;
-        setSolution(fetchSoltuion || []);
-        console.log("Soltuion", fetchSoltuion);
         
+        const typedSolutions = (fetchSoltuion || []) as Solution[];
+        setSolution(typedSolutions);
 
         // First most buying items
         const { data: productsData, error: productsError } = await supabase
@@ -48,14 +96,44 @@ export function DashboardPage() {
           .limit(8);
   
         if (productsError) throw productsError;
-        setProducts(productsData || []);
+        
+        const typedOrders = (productsData || []) as Order[];
+        setProducts(typedOrders);
+
+        const filteredUserProducts = typedOrders.filter(product => 
+          product?.user_id === user.id || product?.creator?.creator_id === user.id
+        );
+        setUserProducts(filteredUserProducts);
+
+        const filteredPurchaseOrders = typedOrders.filter(product => 
+          product?.user_id === user.id
+        );
+        setPurchaseOrders(filteredPurchaseOrders);
+
+        const filteredMyRecentsSale = typedOrders.filter(product => 
+          product?.sellerId === user.id
+        );
+        setMyRecentsSale(filteredMyRecentsSale);
+
+        const filteredSaleCount = typedOrders.filter(product => 
+          product?.solution_id && typedSolutions.some(sol => sol.id === product.solution_id)
+        );
+        setSaleCount(filteredSaleCount);
+
+        const hasSolutions = typedSolutions.length > 0;
+        
+        if (hasSolutions) {
+          setShowSellerDashboard(true);
+        } else {
+          setShowSellerDashboard(false);
+        }
         
         // Then fetch reviews only if we have products
-        if (fetchSoltuion && fetchSoltuion.length > 0) {
+        if (typedSolutions.length > 0) {
           const { data: reviewsData, error: reviewsError } = await supabase
             .from('reviews')
             .select()
-            .in('solution_id', fetchSoltuion.map(p => p.id));
+            .in('solution_id', typedSolutions.map(p => p.id));
   
           if (reviewsError) throw reviewsError;
           setReviews(reviewsData || []);
@@ -92,7 +170,7 @@ export function DashboardPage() {
   }, [reviews]);
 
 
-  const totalSpentValue = products?.reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
+  const totalSpentValue = purchaseOrders?.reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
 
   useEffect(() => {
     setTotalSpent(totalSpentValue);
@@ -138,15 +216,8 @@ export function DashboardPage() {
     );
   }
 
-  // Filter products - ensure this matches your data structure
-  const userProducts = products.filter(product =>{ return product?.user_id === user.id || product?.creator?.creator_id === user.id});
-  const purchaseOrders = products.filter(product => product?.user_id === user.id || product?.creator?.creator_id === user.id);
-  const myRecentsSale = products.filter(product => product?.sellerId === user.id );
-  const saleCount = products.filter(product => product?.solution_id && solution.some(sol => sol.id === product.solution_id));
-
-// If user has no approved products, show buyer dashboard
-  let hasApprovedProducts = userProducts.length > 0;
-  if (hasApprovedProducts && !showSellerDashboard) {
+  // If user has no solutions, show buyer dashboard
+  if (!showSellerDashboard) {
     return (
       <div className="min-h-screen py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
@@ -179,7 +250,7 @@ export function DashboardPage() {
                     {purchaseOrders.map(order => (
                       <div key={order.id} className="flex items-center justify-between p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors cursor-pointer" onClick={() => navigate(`/order/${order.id}`)}>
                         <div className="flex items-center space-x-4">
-                          {order?.solution.image ? (
+                          {order?.solution?.image ? (
                             <div className="w-12 h-12 rounded-lg flex items-center justify-center">
                               <img src={order?.solution?.image} alt="" />
                             </div>
@@ -191,11 +262,11 @@ export function DashboardPage() {
                           <div>
                             <p className="font-medium">{order.solution?.title || 'Unknown Product'}</p>
                             <p className="text-sm text-surface-600">
-                              Purchased on: {new Date(order.created_at).toLocaleDateString()}
+                              Purchased on: {order.created_at ? new Date(order.created_at).toLocaleDateString() : 'Unknown date'}
                             </p>
                           </div>
                         </div>
-                        <p className="font-bold">${Number(order.amount).toLocaleString()}</p>
+                        <p className="font-bold">${order.amount ? Number(order.amount).toLocaleString() : '0'}</p>
                       </div>
                     ))}
                   </div>
@@ -256,10 +327,13 @@ export function DashboardPage() {
               <p className="text-surface-600">Here's what's happening with your AI solutions</p>
             </div>
             <div className="flex gap-4">
-              {/* <button className="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-colors shadow-lg hover:shadow-xl flex items-center gap-2">
-                <Zap className="h-4 w-4" />
-                <span>Download Report</span>
-              </button> */}
+              <button 
+                onClick={switchToBuyerDashboard}
+                className="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-colors shadow-lg hover:shadow-xl flex items-center gap-2"
+              >
+                <ShoppingBag className="h-4 w-4" />
+                <span>Switch to Buyer Dashboard</span>
+              </button>
             </div>
           </div>
 

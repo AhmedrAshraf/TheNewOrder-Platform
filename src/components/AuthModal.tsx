@@ -268,7 +268,7 @@ export function AuthModal({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full bg-surface-50 border border-surface-200 rounded-xl py-2 px-4 pl-10 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500/20 placeholder-surface-400 transition-colors"
-                  placeholder="Enter your name"
+                  placeholder="Enter Your Profession Title"
                   required
                 />
               </div>
