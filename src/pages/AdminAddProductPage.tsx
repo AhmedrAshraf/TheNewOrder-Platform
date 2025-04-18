@@ -150,6 +150,7 @@ export function AdminAddProductPage() {
     }
     });
     
+    const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
     
   useEffect(()=>{
     const fetchUser = async () => {
@@ -525,10 +526,14 @@ const handleFileInput = async (type: string, e: React.ChangeEvent<HTMLInputEleme
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowSubmitConfirmation(true);
+  };
+
+  const handleConfirmSubmit = async () => {
     console.log("handle Submit function called", formData);
     const priceValue = formData.price.trim() === "" ? null : Number(formData.price);
     const consultationRateValue = formData.consultationRate.trim() === "" ? null : Number(formData.consultationRate);
-    e.preventDefault();
 
     const { error } = await supabase
     .from('solutions')
@@ -548,7 +553,7 @@ const handleFileInput = async (type: string, e: React.ChangeEvent<HTMLInputEleme
         status: formData.status,
         creator: {creator_name: user?.name, creator_id: user.id, creator_title: user?.title, creator_bio: user?.bio},
         image: formData.image,
-        bluePrint: formData.bluePrint ,
+        bluePrint: formData.bluePrint,
         demoVideo: formData.demoVideo,
         how_to_make_it_work: formData.how_to_make_it_work
       }
@@ -1823,11 +1828,94 @@ const handleFileInput = async (type: string, e: React.ChangeEvent<HTMLInputEleme
                 type="submit"
                 className="w-full bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-xl py-3 px-4 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 font-medium"
               >
-                Save Solution <ArrowRight className="h-4 w-4" />
+                Submit for Review <ArrowRight className="h-4 w-4" />
               </button>
             </div>
             </form>
           </div>
+
+    {showSubmitConfirmation && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+          <h3 className="text-xl font-semibold mb-4">Review Your Submission</h3>
+          
+          <div className="space-y-4 mb-6">
+            <div className="bg-surface-50 p-4 rounded-lg">
+              <h4 className="font-medium mb-2">Solution Details</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-surface-600">Title:</span>
+                  <span className="font-medium">{formData.title}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-surface-600">Category:</span>
+                  <span className="font-medium capitalize">{formData.category}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-surface-600">Price:</span>
+                  <span className="font-medium">${formData.price}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-surface-600">Complexity:</span>
+                  <span className="font-medium capitalize">{formData.complexity}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-surface-50 p-4 rounded-lg">
+              <h4 className="font-medium mb-2">Key Features</h4>
+              <ul className="list-disc list-inside text-sm space-y-1">
+                {formData.key_features.map((feature, index) => (
+                  <li key={index} className="text-surface-600">{feature}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="bg-surface-50 p-4 rounded-lg">
+              <h4 className="font-medium mb-2">Required Files</h4>
+              <ul className="text-sm space-y-1">
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-secondary-500"></div>
+                  <span className={formData.bluePrint ? "text-surface-600" : "text-red-500"}>
+                    Blueprint {formData.bluePrint ? "✓" : "✗"}
+                  </span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-secondary-500"></div>
+                  <span className={formData.image ? "text-surface-600" : "text-red-500"}>
+                    Thumbnail {formData.image ? "✓" : "✗"}
+                  </span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-secondary-500"></div>
+                  <span className={formData.demoVideo ? "text-surface-600" : "text-red-500"}>
+                    Demo Video {formData.demoVideo ? "✓" : "✗"}
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <p className="text-surface-600 mb-6">
+            Please review your solution details before submitting. Once submitted, your solution will be reviewed by our team.
+          </p>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setShowSubmitConfirmation(false)}
+              className="px-4 py-2 bg-surface-100 hover:bg-surface-200 text-surface-700 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmSubmit}
+              className="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
+              Submit for Review
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </div>
   );
 }
