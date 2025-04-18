@@ -1636,7 +1636,7 @@ const handleFileInput = async (type: string, e: React.ChangeEvent<HTMLInputEleme
               <>
               {thumbnail && (
                 <div className="mb-4">
-                  <p className="text-sm font-medium mb-2">Thumbnail:</p>
+                  <p className="text-sm font-medium mb-2">Blueprint:</p>
                   <img src={thumbnail} className="rounded-lg w-full h-auto" />
                 </div>
               )}

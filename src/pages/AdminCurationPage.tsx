@@ -976,7 +976,7 @@ export function AdminCurationPage() {
             <h2 className="text-2xl font-bold mb-6">Reject Submission</h2>
 
             <div className="space-y-4">
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium mb-2">
                   Reason for Rejection
                 </label>
@@ -987,7 +987,7 @@ export function AdminCurationPage() {
                   placeholder="Provide a reason for rejection..."
                   required
                 />
-              </div>
+              </div> */}
 
               <div className="flex gap-4">
                 <button
@@ -1001,7 +1001,7 @@ export function AdminCurationPage() {
                     selectedWorkflow && rejectWorkflow(selectedWorkflow.id)
                   }
                   className="flex-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded-lg py-3 px-4 transition-all duration-200 shadow-lg hover:shadow-xl"
-                  disabled={!rejectionReason.trim()}
+                  // disabled={!rejectionReason.trim()}
                 >
                   Confirm Rejection
                 </button>
