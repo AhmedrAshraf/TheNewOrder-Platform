@@ -6,9 +6,10 @@ import {
 } from 'lucide-react';
 import { AdminNav } from '../components/AdminNav';
 import type { AuthState } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 interface AdminUsersPageProps {
-  auth: AuthState;
+  user: AuthState;
 }
 
 // Sample users for demonstration
@@ -59,7 +60,8 @@ const SAMPLE_USERS = [
   }
 ];
 
-export function AdminUsersPage({ auth }: AdminUsersPageProps) {
+export function AdminUsersPage() {
+  const { user } = useAuth();
   const [users, setUsers] = useState(SAMPLE_USERS);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState('all');
@@ -72,7 +74,7 @@ export function AdminUsersPage({ auth }: AdminUsersPageProps) {
   const navigate = useNavigate();
 
   // Redirect if not admin
-  if (!auth || auth.role !== 'admin') {
+  if (!user || user.role !== 'admin') {
     return (
       <div className="min-h-screen pt-20 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
         <div className="bg-white p-8 rounded-xl border border-surface-200 shadow-card max-w-md text-center">
