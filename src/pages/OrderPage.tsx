@@ -18,7 +18,7 @@ interface Order {
   user_id: string;
   solution_id: string;
   amount: number;
-  status: string;
+  payment_status: string;
   created_at: string;
   payment_method?: string;
   solution?: Solution;
@@ -136,7 +136,7 @@ export function OrderPage() {
   // Determine order status
   const getStatusInfo = (status: string) => {
     switch (status) {
-      case 'completed':
+      case 'complete':
         return { text: 'Completed', icon: CheckCircle, color: 'text-green-500' };
       case 'pending':
         return { text: 'Pending', icon: Clock, color: 'text-yellow-500' };
@@ -174,7 +174,7 @@ export function OrderPage() {
     }
   };
 
-  const statusInfo = getStatusInfo(order.status);
+  const statusInfo = getStatusInfo(order.payment_status);
   return (
     <div className="min-h-screen py-20 bg-white">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

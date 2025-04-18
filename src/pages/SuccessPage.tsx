@@ -5,17 +5,26 @@ import {
   Download,
   MessageCircle,
   Rocket,
+  FileArchive
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios"
 
+interface Solution {
+  bluePrint?: string;
+}
+
+interface BookingDetail {
+  solution?: Solution;
+}
+
 export function SuccessPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [bookingDetail, setBookingDetail] = useState(null);
+  const [bookingDetail, setBookingDetail] = useState<BookingDetail | null>(null);
   const [searchParams] = useSearchParams();
 
   const data = {
@@ -28,11 +37,36 @@ export function SuccessPage() {
     messageId: searchParams.get("messageId"),
   };
 
+  const downloadBlueprint = async (url: string) => {
+    try {
+      const filename = url.split('/').pop() || 'blueprint';
+      const response = await fetch(url);
+      const blob = await response.blob();
+      
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      
+      document.body.appendChild(link);
+      link.click();
+      
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      alert('Failed to download blueprint');
+    }
+  };
+
   const sendEmail = async (emailData: { [key: string]: any }) => {
-    // const response = await axios.post('http://localhost:8200/api/send-email', emailData );
-    const response = await axios.post('https://the-new-order-platform-server.vercel.app/api/send-email', emailData );
+    const emailPayload = {
+      ...emailData,
+      amount: emailData.amount / 100
+    };
+    const response = await axios.post('https://the-new-order-platform-server.vercel.app/api/send-email', emailPayload);
     if (response.status === 200) {
-      alert("email send successfully")
+      // alert("email send successfully")
     }
   }
 
@@ -61,11 +95,16 @@ export function SuccessPage() {
    
       if (existingBooking) {
         setBookingDetail(existingBooking);
+        if (existingBooking.solution?.bluePrint) {
+          await downloadBlueprint(existingBooking.solution.bluePrint);
+        }
         setLoading(false);
         return;
       }
 
       const messageId = data?.messageId !== "undefined" ? data.messageId : null;
+      const amount = data.amount ? parseInt(data.amount) : 0;
+      const solutionId = data.solution_id ? parseInt(data.solution_id) : 0;
 
       const { data: bookingData, error } = await supabase
         .from("orders")
@@ -74,7 +113,7 @@ export function SuccessPage() {
             user_id: user?.id,
             subscription_id: data.sessionId,
             payment_status: data.status,
-            amount: parseInt(data.amount),
+            amount: amount,
             status: "pending",
             solution_id: parseInt(data.solution_id),
             sellerId: data.sellerId,
@@ -85,7 +124,7 @@ export function SuccessPage() {
         .select("*");
   
       if (error) {
-        console.error("Error inserting orssders:", error);
+        console.error("Error inserting orders:", error);
         return;
       }
 
@@ -109,22 +148,16 @@ export function SuccessPage() {
         } else {
           console.error("Failed to fetch proposal:", error);
         }
-      } else {
-        console.error("Message ID is missing or undefined");
       }
-      
-  
-      // const response = await axios.post('https://the-new-order-platform-server.vercel.app/api/send-email', emailData );
-      // if (response.status === 200) {
-      //   alert("email send successfully")
-      // }
-      // const emailData = {...bookingData, email: user?.email};
 
       const emailData = { ...bookingData[0], email: user?.email };
-      console.log(" bookingData:", bookingData)
-      sendEmail(emailData)
-      setBookingDetail(bookingData);
+      console.log("bookingData:", bookingData);
+      await sendEmail(emailData);
+      setBookingDetail(bookingData[0]);
 
+      if (bookingData[0]?.solution?.bluePrint) {
+        await downloadBlueprint(bookingData[0].solution.bluePrint);
+      }
 
     } catch (err) {
       console.error(err);
@@ -132,8 +165,6 @@ export function SuccessPage() {
       setLoading(false);
     }
   };
-  
-  
 
   useEffect(() => {
     if (!user) {
@@ -249,7 +280,6 @@ export function SuccessPage() {
                 <ArrowRight className="h-5 w-5" />
                 Back to Marketplace
               </button>
-              {/* <button onClick={sendEmail}>sendEmail</button> */}
             </div>
 
             <div className="mt-8 pt-8 border-t border-surface-200">
