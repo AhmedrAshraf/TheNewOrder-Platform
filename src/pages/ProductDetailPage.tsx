@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Share2, Zap, ArrowLeft, Tag, User, Calendar, Download, Shield, Loader2, 
@@ -31,6 +31,7 @@ export function ProductDetailPage() {
   const [comment, setComment] = useState<string>('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const {user} = useAuth()
+  const safeVideoUrl = encodeURI(product?.demoVideo);
   
   const fetchReviews = async () => {
     const { data, error } = await supabase
@@ -206,6 +207,48 @@ export function ProductDetailPage() {
       description: "Adapt the workflow to your specific needs"
     }
   ];
+
+  const VideoPlayer = ({ videoUrl }) => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [hasError, setHasError] = useState(false);
+  
+    useEffect(() => {
+      const video = videoRef.current;
+      if (!video) return;
+  
+      const handleError = () => {
+        console.log("Video error", video.error);
+        setHasError(true);
+      };
+  
+      video.addEventListener('error', handleError);
+      return () => video.removeEventListener('error', handleError);
+    }, []);
+  
+    if (hasError) {
+      return (
+        <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
+          <p>Could not load video. <a href={videoUrl} target="_blank" rel="noopener">Open directly</a></p>
+        </div>
+      );
+    }
+  
+    return (
+      <video
+        ref={videoRef}
+        src={`${videoUrl}?t=${Date.now()}`} // Cache busting
+        controls
+        className="w-full h-full rounded-lg"
+        playsInline
+        preload="metadata"
+      >
+        <source src={videoUrl} type="video/mp4" />
+        Your browser does not support HTML5 video.
+      </video>
+    );
+  };
+
+  console.log("product demo video", product?.demoVideo)
 
   return (
     <div className="min-h-screen py-20 px-4 sm:px-6 lg:px-8 bg-white">
@@ -426,13 +469,7 @@ export function ProductDetailPage() {
                       <h2 className="text-xl font-semibold mb-3 text-surface-900">Demo Video</h2>
                       <div className="aspect-video bg-surface-100 rounded-lg flex items-center justify-center">
                         {/* <Video className="h-12 w-12 text-surface-400" /> */}
-                        <video 
-                        src={product?.demoVideo} 
-                        controls 
-                        className="w-full h-full rounded-lg"
-                        >
-                        Your browser does not support the video tag.
-                      </video>
+                        <VideoPlayer videoUrl={product?.demoVideo} />
                       </div>
                       <p className="text-sm text-surface-500 mt-2">
                         Watch a quick demo of how this tool works and its main features.
@@ -467,9 +504,9 @@ export function ProductDetailPage() {
                             <h3 className="font-medium text-surface-900">Required Tools</h3>
                           </div>
                           <ul className="space-y-2 text-sm text-surface-600">
-                            <li>• Modern web browser</li>
-                            <li>• Command line interface</li>
-                            <li>• Node.js v14+</li>
+                            {product.how_to_make_it_work?.prerequisites?.tools?.map((tool, index) => (
+                              <li key={index}>• {tool}</li>
+                            ))}
                           </ul>
                         </div>
                         
@@ -479,8 +516,9 @@ export function ProductDetailPage() {
                             <h3 className="font-medium text-surface-900">Subscriptions</h3>
                           </div>
                           <ul className="space-y-2 text-sm text-surface-600">
-                            <li>• OpenAI API key ($0.002 per 1K tokens)</li>
-                            <li>• Optional: Cloud hosting provider</li>
+                            {product.how_to_make_it_work?.prerequisites?.subscriptions?.map((sub, index) => (
+                              <li key={index}>• {sub}</li>
+                            ))}
                           </ul>
                         </div>
                         
@@ -490,8 +528,9 @@ export function ProductDetailPage() {
                             <h3 className="font-medium text-surface-900">Skills Needed</h3>
                           </div>
                           <ul className="space-y-2 text-sm text-surface-600">
-                            <li>• Basic understanding of JavaScript</li>
-                            <li>• Familiarity with API concepts</li>
+                            {product.how_to_make_it_work?.prerequisites?.skills?.map((skill, index) => (
+                              <li key={index}>• {skill}</li>
+                            ))}
                           </ul>
                         </div>
                       </div>
@@ -504,93 +543,48 @@ export function ProductDetailPage() {
                           <div className="flex-1 h-2 bg-surface-200 rounded-full overflow-hidden">
                             <div className="h-full bg-gradient-to-r from-secondary-500 to-primary-500 w-1/2"></div>
                           </div>
-                          <span className="font-medium text-secondary-700">Medium</span>
+                          <span className="font-medium text-secondary-700">{product.how_to_make_it_work?.difficulty_level?.level}</span>
                         </div>
-                        <p className="text-sm text-surface-600">
-                          This tool requires some technical knowledge to set up and configure, but comes with comprehensive documentation to guide you through the process.
-                        </p>
+                        <div className="space-y-2 text-sm text-surface-600">
+                          <p><strong>Learning Curve:</strong> {product.how_to_make_it_work?.difficulty_level?.learningCurve}</p>
+                          <p><strong>Setup Time:</strong> {product.how_to_make_it_work?.difficulty_level?.setupTime}</p>
+                          <p><strong>Technical Requirements:</strong> {product.how_to_make_it_work?.difficulty_level?.technicalRequirements}</p>
+                          <p><strong>Support Availability:</strong> {product.how_to_make_it_work?.difficulty_level?.supportAvailability}</p>
+                        </div>
                       </div>
                     </div>
                     
                     <div className="mb-8">
                       <h2 className="text-xl font-semibold mb-4 text-surface-900">Setup Process</h2>
                       <div className="space-y-4">
-                        <div className="bg-surface-50 rounded-lg p-4 border border-surface-200">
-                          <h3 className="font-medium mb-2 flex items-center gap-2 text-surface-900">
-                            <div className="w-6 h-6 rounded-full bg-secondary-500 flex items-center justify-center text-sm text-white">1</div>
-                            <span>Installation</span>
-                          </h3>
-                          <p className="text-sm text-surface-600 mb-2">
-                            Install the package using npm or yarn:
-                          </p>
-                          <div className="bg-surface-100 p-2 rounded font-mono text-sm mb-2">
-                            npm install ai-document-processor
+                        {product.how_to_make_it_work?.setup_process?.map((step, index) => (
+                          <div key={index} className="bg-surface-50 rounded-lg p-4 border border-surface-200">
+                            <h3 className="font-medium mb-2 flex items-center gap-2 text-surface-900">
+                              <div className="w-6 h-6 rounded-full bg-secondary-500 flex items-center justify-center text-sm text-white">{index + 1}</div>
+                              <span>{step.title}</span>
+                            </h3>
+                            <p className="text-sm text-surface-600">
+                              {step.description}
+                            </p>
                           </div>
-                          <p className="text-sm text-surface-600">
-                            This will install all required dependencies and set up the basic configuration.
-                          </p>
-                        </div>
-                        
-                        <div className="bg-surface-50 rounded-lg p-4 border border-surface-200">
-                          <h3 className="font-medium mb-2 flex items-center gap-2 text-surface-900">
-                            <div className="w-6 h-6 rounded-full bg-secondary-500 flex items-center justify-center text-sm text-white">2</div>
-                            <span>Configuration</span>
-                          </h3>
-                          <p className="text-sm text-surface-600 mb-2">
-                            Create a configuration file with your API keys and preferences:
-                          </p>
-                          <div className="bg-surface-100 p-2 rounded font-mono text-sm mb-2">
-                            {`// config.js\nmodule.exports = {\n  apiKey: 'your-api-key',\n  modelName: 'gpt-4',\n  maxTokens: 2000\n};`}
-                          </div>
-                        </div>
-                        
-                        <div className="bg-surface-50 rounded-lg p-4 border border-surface-200">
-                          <h3 className="font-medium mb-2 flex items-center gap-2 text-surface-900">
-                            <div className="w-6 h-6 rounded-full bg-secondary-500 flex items-center justify-center text-sm text-white">3</div>
-                            <span>Integration</span>
-                          </h3>
-                          <p className="text-sm text-surface-600">
-                            Import the package into your application and start processing documents:
-                          </p>
-                          <div className="bg-surface-100 p-2 rounded font-mono text-sm mt-2">
-                            {`const processor = require('ai-document-processor');\n\nprocessor.analyze('path/to/document.pdf')\n  .then(results => console.log(results))\n  .catch(err => console.error(err));`}
-                          </div>
-                        </div>
+                        ))}
                       </div>
                     </div>
                     
                     <div>
                       <h2 className="text-xl font-semibold mb-4 text-surface-900">Common Issues & Solutions</h2>
                       <div className="space-y-4">
-                        <div className="bg-surface-50 rounded-lg p-4 border border-surface-200">
-                          <div className="flex items-start gap-2 mb-2">
-                            <AlertTriangle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-                            <h3 className="font-medium text-surface-900">API Rate Limiting</h3>
+                        {product.how_to_make_it_work?.common_issues?.map((issue, index) => (
+                          <div key={index} className="bg-surface-50 rounded-lg p-4 border border-surface-200">
+                            <div className="flex items-start gap-2 mb-2">
+                              <AlertTriangle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                              <h3 className="font-medium text-surface-900">{issue.title}</h3>
+                            </div>
+                            <p className="text-sm text-surface-600">
+                              {issue.description}
+                            </p>
                           </div>
-                          <p className="text-sm text-surface-600">
-                            If you encounter rate limiting issues, implement a retry mechanism with exponential backoff or upgrade to a higher tier API plan.
-                          </p>
-                        </div>
-                        
-                        <div className="bg-surface-50 rounded-lg p-4 border border-surface-200">
-                          <div className="flex items-start gap-2 mb-2">
-                            <AlertTriangle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-                            <h3 className="font-medium text-surface-900">Memory Usage</h3>
-                          </div>
-                          <p className="text-sm text-surface-600">
-                            For large documents, you may need to increase the available memory. Use the --max-old-space-size flag when running Node.js.
-                          </p>
-                        </div>
-                        
-                        <div className="bg-surface-50 rounded-lg p-4 border border-surface-200">
-                          <div className="flex items-start gap-2 mb-2">
-                            <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                            <h3 className="font-medium text-surface-900">Performance Optimization</h3>
-                          </div>
-                          <p className="text-sm text-surface-600">
-                            For better performance, process documents in batches and implement caching for frequently accessed results.
-                          </p>
-                        </div>
+                        ))}
                       </div>
                     </div>
                   </>
