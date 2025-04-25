@@ -93,7 +93,7 @@ export function DashboardPage() {
           .from('orders')
           .select('*')
           // .eq('user_id', user.id)
-          .limit(8);
+          // .limit(8);
   
         if (productsError) throw productsError;
         
@@ -251,8 +251,8 @@ export function DashboardPage() {
                       <div key={order.id} className="flex items-center justify-between p-4 bg-surface-50 rounded-lg hover:bg-surface-100 transition-colors cursor-pointer" onClick={() => navigate(`/order/${order.id}`)}>
                         <div className="flex items-center space-x-4">
                           {order?.solution?.image ? (
-                            <div className="w-12 h-12 rounded-lg flex items-center justify-center">
-                              <img src={order?.solution?.image} alt="" />
+                            <div className="w-12 h-12 rounded-lg">
+                              <img src={order?.solution?.image} alt="" className='w-full h-full rounded-lg' />
                             </div>
                             ):(
                           <div className="w-12 h-12 rounded-lg bg-surface-200 flex items-center justify-center">

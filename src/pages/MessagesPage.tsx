@@ -221,15 +221,34 @@ export function MessagesPage() {
   
     try {
       setLoadingProposals(prev => ({ ...prev, [message.id]: true }));
-
+  
+      const { data: solutions, error } = await supabase
+        .from('solutions')
+        .select('*')
+        .eq('user_id', message.sender_id);
+  
+      if (error) {
+        console.error('Error fetching solutions:', error);
+        return;
+      }
+  
+      const solution = solutions?.[0];
+  
+      if (!solution) {
+        alert("No solution found for this seller.");
+        return;
+      }
+  
       const response = await axios.post(
         'https://the-new-order-platform-server.vercel.app/api/create-checkout-session',
         {
-          uid: user?.id,
+          uid: user.id,
           totalprice: message.proposal?.total_cost,
-          customerEmail: user?.email,
+          customerEmail: user.email,
           sellerId: message.sender_id,
           messageId: message.id,
+          solution,
+          solution_id: solution.id,
           proposal: {
             title: message.proposal?.title,
             description: message.proposal?.description,
@@ -255,7 +274,7 @@ export function MessagesPage() {
     } finally {
       setLoadingProposals(prev => ({ ...prev, [message.id]: false }));
     }
-  };
+  };  
 
   return (
     <div className="pt-16 bg-surface-50">

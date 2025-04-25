@@ -469,7 +469,7 @@ export function ProductDetailPage() {
                       <h2 className="text-xl font-semibold mb-3 text-surface-900">Demo Video</h2>
                       <div className="aspect-video bg-surface-100 rounded-lg flex items-center justify-center">
                         {/* <Video className="h-12 w-12 text-surface-400" /> */}
-                        <VideoPlayer videoUrl={product?.demoVideo} />
+                        <VideoPlayer videoUrl={product.demoVideo} />
                       </div>
                       <p className="text-sm text-surface-500 mt-2">
                         Watch a quick demo of how this tool works and its main features.

@@ -11,6 +11,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios"
+import { useNotifications } from '../context/NotificationContext';
 
 interface Solution {
   bluePrint?: string;
@@ -36,6 +37,8 @@ export function SuccessPage() {
     sellerId: searchParams.get("sellerId"),
     messageId: searchParams.get("messageId"),
   };
+
+  const { addNotification } = useNotifications();
 
   const downloadBlueprint = async (url: string) => {
     try {
@@ -115,7 +118,7 @@ export function SuccessPage() {
             payment_status: data.status,
             amount: amount,
             status: "pending",
-            solution_id: parseInt(data.solution_id),
+            solution_id: solutionId,
             sellerId: data.sellerId,
             message_id: messageId,
             solution: parsedSolution,
@@ -158,6 +161,14 @@ export function SuccessPage() {
       if (bookingData[0]?.solution?.bluePrint) {
         await downloadBlueprint(bookingData[0].solution.bluePrint);
       }
+
+      // Send notification to admin after booking update
+      addNotification({
+        type: 'admin',
+        title: 'Booking Updated',
+        message: `Booking for user ${user?.email} has been updated successfully.`,
+        link: '/admin/bookings'
+      });
 
     } catch (err) {
       console.error(err);

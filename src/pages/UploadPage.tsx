@@ -4,6 +4,7 @@ import type { Product } from '../types';
 import {useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 
 export function UploadPage() {
   const [dragActive, setDragActive] = useState(false);
@@ -23,6 +24,7 @@ export function UploadPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false)
   const [demoVideo, setDemoVideo] = useState(null)
+  const { addNotification } = useNotifications();
   
   // Add new state variables for How to Make It Work section
   const [newTool, setNewTool] = useState('');
@@ -270,9 +272,16 @@ export function UploadPage() {
 
     if(error){
       console.error('error', error);
+    } else {
+      addNotification({
+        type: 'admin',
+        title: 'New Solution Added',
+        message: `A new solution titled "${formData.title}" has been added by ${user?.name}.`,
+        link: '/admin/curation'
+      });
+      console.log("✅ solutions added");
+      navigate('/dashboard');
     }
-    console.log("✅ solutions added");
-    navigate('/dashboard');
   };
 
   const nextStep = () => {
