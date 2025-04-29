@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Zap, Shield, Layers, Rocket, Code, Bot, Cpu, Lock, Clock, Award, Users, Search, X, TrendingUp } from 'lucide-react';
+import { Shield, Layers, Rocket, Code, Bot, Lock, Clock, Award, Users, Search, X, TrendingUp, ChevronDown } from 'lucide-react';
 import { ProductCard } from './ProductCard';
 import { useNavigate } from 'react-router-dom';
+import type { Product } from '../types';
 import { supabase } from '../lib/supabase';
 import {QuantumBackground} from "./QuantumBackground"
 
@@ -16,7 +17,7 @@ export function Hero({ onUploadClick, onExploreClick,  }: HeroProps) {
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [typedPlaceholder, setTypedPlaceholder] = useState('');
   const [isTyping, setIsTyping] = useState(true);
-  const [products, setProducts] = useState([])
+  const [products, setProducts] = useState<Product[]>([]);
   const navigate = useNavigate();
 
   // Shorter, focused search suggestions
@@ -151,9 +152,10 @@ fetchProduct();
 
       <div className="bg-surface-50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">Featured Automations</h2>
-            <div className="flex gap-2">
+
+            <div className="hidden md:flex gap-2">
               <button 
                 className={`px-4 py-2 ${filterOption === 'latest' ? 'bg-primary-600 text-white' : 'bg-surface-100 text-surface-900'} rounded-lg`}
                 onClick={() => setFilterOption('latest')}
@@ -172,6 +174,23 @@ fetchProduct();
               >
                 Trending
               </button>
+            </div>
+
+            <div className="md:hidden w-full mt-4">
+              <div className="relative">
+                <select
+                  value={filterOption}
+                  onChange={(e) => setFilterOption(e.target.value as 'latest' | 'popular' | 'trending')}
+                  className="w-full bg-white border border-surface-200 rounded-lg py-2 px-4 appearance-none focus:outline-none focus:border-primary-500"
+                >
+                  <option value="latest">Latest</option>
+                  <option value="popular">Popular</option>
+                  <option value="trending">Trending</option>
+                </select>
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                  <ChevronDown className="h-4 w-4 text-surface-400" />
+                </div>
+              </div>
             </div>
           </div>
           
