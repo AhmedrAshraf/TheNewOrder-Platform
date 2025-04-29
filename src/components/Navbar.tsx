@@ -199,20 +199,34 @@ export function Navbar({
                   <NotificationCenter user={currentUser} />
                   <span>Notifications</span>
                 </div>
+
+                <div className="border-t border-surface-200 pt-4">
+                  <div className="flex flex-col space-y-2">
+                    <button className="flex items-center space-x-2 p-2 hover:bg-surface-100 rounded-lg">
+                      <span>Profile</span>
+                    </button>
+                    <button className="flex items-center space-x-2 p-2 hover:bg-surface-100 rounded-lg">
+                      <span>Settings</span>
+                    </button>
+                    <button 
+                      onClick={onSignOut}
+                      className="flex items-center space-x-2 p-2 text-red-500 hover:bg-surface-100 rounded-lg"
+                    >
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
               </>
             )}
             
-            <div className="flex items-center space-x-2 py-2 hover:bg-surface-100 rounded-lg">
-              <UserDropdown 
-                auth={currentUser ? { isAuthenticated: true, user: currentUser } : { isAuthenticated: false, user: null }} 
-                onSignOut={onSignOut}
-                onAuthClick={onAuthClick}
-                buttonStyles={currentUser ? undefined : "w-full"}
-              />
-              {currentUser && (
-                <span>Account</span>
-              )}
-            </div>
+            {!currentUser && (
+              <button
+                onClick={onAuthClick}
+                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-colors shadow-button hover:shadow-button-hover"
+              >
+                <span>Get Started</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
