@@ -8,9 +8,10 @@ interface UserDropdownProps {
   auth: AuthState;
   onSignOut: () => void;
   onAuthClick: () => void;
+  buttonStyles?: string;
 }
 
-export function UserDropdown({onSignOut, onAuthClick }: UserDropdownProps) {
+export function UserDropdown({onSignOut, onAuthClick, buttonStyles }: UserDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -44,11 +45,11 @@ export function UserDropdown({onSignOut, onAuthClick }: UserDropdownProps) {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className={`relative ${buttonStyles}`} ref={dropdownRef}>
       {!user ? (
       <button
         onClick={toggleDropdown}
-        className="px-6 py-3 bg-gradient-to-r flex gap-3 capitalize from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
+        className={`px-6 py-3 bg-gradient-to-r flex gap-3 capitalize from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl font-medium ${buttonStyles}`}
         title={user ? 'Account' : 'Sign In'}
       >
         <User className="h-5 w-5" />Get started
