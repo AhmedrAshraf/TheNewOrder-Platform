@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Twitter, Linkedin, Github, Youtube } from 'lucide-react';
+import { Twitter, Linkedin, Github, Youtube, Layers } from 'lucide-react';
 import { QuantumBackground } from '../components/QuantumBackground';
 
 export function Footer() {
@@ -15,50 +15,7 @@ export function Footer() {
           {/* Brand and Description */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              {/* 3D Quantum-inspired geometric logo */}
-              <div className="relative h-8 w-8">
-                {/* Base layer with perspective */}
-                <div className="absolute inset-0 transform-gpu rotate-45">
-                  <div className="absolute inset-[15%] border-2 border-primary-600 rounded-lg transform-gpu rotate-45 bg-gradient-to-br from-white/5 to-white/20"></div>
-                </div>
-
-                {/* Middle layer with perspective */}
-                <div className="absolute inset-0 transform-gpu -rotate-45">
-                  <div className="absolute inset-[25%] border-2 border-secondary-500 rounded-lg transform-gpu -rotate-45 bg-gradient-to-tr from-white/10 to-white/30"></div>
-                </div>
-
-                {/* Orbital rings with 3D effect */}
-                <div className="absolute inset-0">
-                  {/* Horizontal ring with depth */}
-                  <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-primary-600/20 via-secondary-500 to-primary-600/20 transform -translate-y-1/2 shadow-lg"></div>
-                  
-                  {/* Vertical ring with depth */}
-                  <div className="absolute left-1/2 top-0 h-full w-0.5 bg-gradient-to-b from-primary-600/20 via-secondary-500 to-primary-600/20 transform -translate-x-1/2 shadow-lg"></div>
-                  
-                  {/* Diagonal rings with depth */}
-                  <div className="absolute inset-0 transform rotate-45">
-                    <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-primary-600/20 via-secondary-500 to-primary-600/20 transform -translate-y-1/2 shadow-lg"></div>
-                    <div className="absolute left-1/2 top-0 h-full w-0.5 bg-gradient-to-b from-primary-600/20 via-secondary-500 to-primary-600/20 transform -translate-x-1/2 shadow-lg"></div>
-                  </div>
-                </div>
-
-                {/* Quantum particles with glow */}
-                <div className="absolute inset-0">
-                  <div className="absolute top-0 left-1/2 w-1.5 h-1.5 bg-primary-600 rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-[0_0_8px_rgba(0,0,0,0.3)] animate-pulse"></div>
-                  <div className="absolute bottom-0 left-1/2 w-1.5 h-1.5 bg-secondary-500 rounded-full transform -translate-x-1/2 translate-y-1/2 shadow-[0_0_8px_rgba(0,0,0,0.3)] animate-pulse"></div>
-                  <div className="absolute left-0 top-1/2 w-1.5 h-1.5 bg-primary-600 rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-[0_0_8px_rgba(0,0,0,0.3)] animate-pulse"></div>
-                  <div className="absolute right-0 top-1/2 w-1.5 h-1.5 bg-secondary-500 rounded-full transform translate-x-1/2 -translate-y-1/2 shadow-[0_0_8px_rgba(0,0,0,0.3)] animate-pulse"></div>
-                  
-                  {/* Diagonal particles with glow */}
-                  <div className="absolute inset-0 transform rotate-45">
-                    <div className="absolute top-0 left-1/2 w-1.5 h-1.5 bg-primary-600 rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-[0_0_8px_rgba(0,0,0,0.3)] animate-pulse"></div>
-                    <div className="absolute bottom-0 left-1/2 w-1.5 h-1.5 bg-secondary-500 rounded-full transform -translate-x-1/2 translate-y-1/2 shadow-[0_0_8px_rgba(0,0,0,0.3)] animate-pulse"></div>
-                  </div>
-                </div>
-
-                {/* Central core with glow */}
-                <div className="absolute inset-[35%] bg-gradient-to-br from-primary-600 to-secondary-500 rounded-full shadow-[0_0_12px_rgba(0,0,0,0.4)] animate-pulse"></div>
-              </div>
+            <Layers className="h-8 w-8 text-secondary-500" />
               <span className="text-2xl font-bold font-poppins text-surface-900">The<span className="text-secondary-500">New</span>Order</span>
             </div>
             <p className="text-surface-600 mb-4 max-w-md">
