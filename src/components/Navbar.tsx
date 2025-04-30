@@ -1,5 +1,5 @@
 import React, { useState , useEffect} from 'react';
-import { Search, PlusCircle, MessageCircle, Layers, Menu, X } from 'lucide-react';
+import { Search, PlusCircle, MessageCircle, Layers, Menu, X, User as UserIcon, Wallet, Settings, LogOut, LogIn, Shield, Filter, BarChart3 } from 'lucide-react';
 import { UserDropdown } from './UserDropdown';
 import { ChatInbox } from './ChatInbox';
 import { NotificationCenter } from './NotificationCenter';
@@ -202,18 +202,111 @@ export function Navbar({
 
                 <div className="border-t border-surface-200 pt-4">
                   <div className="flex flex-col space-y-2">
-                    <button className="flex items-center space-x-2 p-2 hover:bg-surface-100 rounded-lg">
-                      <span>Profile</span>
-                    </button>
-                    <button className="flex items-center space-x-2 p-2 hover:bg-surface-100 rounded-lg">
-                      <span>Settings</span>
-                    </button>
-                    <button 
-                      onClick={onSignOut}
-                      className="flex items-center space-x-2 p-2 text-red-500 hover:bg-surface-100 rounded-lg"
-                    >
-                      <span>Sign Out</span>
-                    </button>
+                    {currentUser?.role === 'admin' && (
+                      <>
+                        <button 
+                          onClick={() => {
+                            window.location.href = '/admin';
+                            toggleMobileMenu();
+                          }}
+                          className="flex items-center space-x-2 p-2 hover:bg-surface-100 rounded-lg"
+                        >
+                          <Shield className="h-4 w-4 text-surface-400" />
+                          <span>Admin Panel</span>
+                        </button>
+                        <button 
+                          onClick={() => {
+                            window.location.href = '/admin/curation';
+                            toggleMobileMenu();
+                          }}
+                          className="flex items-center space-x-2 p-2 hover:bg-surface-100 rounded-lg"
+                        >
+                          <Filter className="h-4 w-4 text-surface-400" />
+                          <span>Solution Curation</span>
+                        </button>
+                        <button 
+                          onClick={() => {
+                            window.location.href = '/admin/add-product';
+                            toggleMobileMenu();
+                          }}
+                          className="flex items-center space-x-2 p-2 hover:bg-surface-100 rounded-lg"
+                        >
+                          <PlusCircle className="h-4 w-4 text-surface-400" />
+                          <span>Add New Solution</span>
+                        </button>
+                        <button 
+                          onClick={() => {
+                            window.location.href = '/admin/users';
+                            toggleMobileMenu();
+                          }}
+                          className="flex items-center space-x-2 p-2 hover:bg-surface-100 rounded-lg"
+                        >
+                          <UserIcon className="h-4 w-4 text-surface-400" />
+                          <span>User Management</span>
+                        </button>
+                        <button 
+                          onClick={() => {
+                            window.location.href = '/admin/stats';
+                            toggleMobileMenu();
+                          }}
+                          className="flex items-center space-x-2 p-2 hover:bg-surface-100 rounded-lg"
+                        >
+                          <BarChart3 className="h-4 w-4 text-surface-400" />
+                          <span>Statistics</span>
+                        </button>
+                        <div className="border-t border-surface-200 my-2"></div>
+                      </>
+                    )}
+                    {currentUser ? (
+                      <>
+                        <button 
+                          onClick={() => {
+                            window.location.href = '/dashboard';
+                            toggleMobileMenu();
+                          }}
+                          className="flex items-center space-x-2 p-2 hover:bg-surface-100 rounded-lg"
+                        >
+                          <UserIcon className="h-4 w-4 text-surface-400" />
+                          <span>Dashboard</span>
+                        </button>
+                        <button 
+                          onClick={() => {
+                            window.location.href = '/managePayouts';
+                            toggleMobileMenu();
+                          }}
+                          className="flex items-center space-x-2 p-2 hover:bg-surface-100 rounded-lg"
+                        >
+                          <Wallet className="h-4 w-4 text-surface-400" />
+                          <span>Payout Management</span>
+                        </button>
+                        <button 
+                          onClick={() => {
+                            window.location.href = '/settings';
+                            toggleMobileMenu();
+                          }}
+                          className="flex items-center space-x-2 p-2 hover:bg-surface-100 rounded-lg"
+                        >
+                          <Settings className="h-4 w-4 text-surface-400" />
+                          <span>Settings</span>
+                        </button>
+                        <div className="border-t border-surface-200 my-2"></div>
+                        <button 
+                          onClick={onSignOut}
+                          className="flex items-center space-x-2 p-2 text-red-500 hover:bg-surface-100 rounded-lg"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          <span>Sign Out</span>
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={onAuthClick}
+                        className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white rounded-lg transition-colors shadow-button hover:shadow-button-hover"
+                      >
+                        <LogIn className="h-4 w-4" />
+                        <span>Sign In</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </>

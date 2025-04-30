@@ -108,7 +108,6 @@ export function AuthModal({
   const handleAuth = async (name: string, email: string, password: string, isSignUp: boolean, bio: string, title: string, lastName: string) => {
     try {
       setLoading(true)
-      const isAdmin = email.includes('admin');
       const trimmedEmail = email.trim();
       
       if(isSignUp) {
